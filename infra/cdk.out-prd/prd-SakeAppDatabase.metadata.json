@@ -1,0 +1,163 @@
+{
+  "/prd-SakeAppDatabase": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/SakeMasterTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "SakeMasterTable46854873"
+      }
+    }
+  ],
+  "/prd-SakeAppDatabase/UserActionsTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "UserActionsTableFDA684BA"
+      }
+    }
+  ],
+  "/prd-SakeAppDatabase/SakeMasterTableName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SakeMasterTableName"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new DatabaseStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/database-stack.js:27:9)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/UserActionsTableName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserActionsTableName"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new DatabaseStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/database-stack.js:31:9)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/SakeMasterTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SakeMasterTable46854873"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new DatabaseStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/database-stack.js:8:32)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/UserActionsTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserActionsTableFDA684BA"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new DatabaseStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/database-stack.js:17:33)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:20:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/CDKMetadata/Condition": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadataAvailable"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/Exports/Output{\"Fn::GetAtt\":[\"SakeMasterTable46854873\",\"Arn\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSakeMasterTable46854873Arn0260BF93"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/prd-SakeAppDatabase/Exports/Output{\"Ref\":\"SakeMasterTable46854873\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefSakeMasterTable46854873D39E7262"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ]
+}

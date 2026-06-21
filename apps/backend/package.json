@@ -1,0 +1,26 @@
+{
+  "name": "@sake-app/backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.0.0",
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@fastify/aws-lambda": "^5.1.0",
+    "@sake-app/shared": "*",
+    "@sake-app/utils": "*",
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
+

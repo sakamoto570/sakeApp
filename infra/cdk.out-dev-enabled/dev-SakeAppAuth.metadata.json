@@ -1,0 +1,78 @@
+{
+  "/dev-SakeAppAuth": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:23: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:23:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppAuth/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppAuth/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppAuth/UserPool/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserPool6BA7E5F2"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new UserPool2 in aws-cdk-lib...",
+        "new AuthStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/auth-stack.js:7:25)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:23: (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:23:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppAuth/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppAuth/CDKMetadata/Condition": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadataAvailable"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ]
+}

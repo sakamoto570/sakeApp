@@ -1,0 +1,167 @@
+{
+  "/dev-SakeAppBatch": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:29 (:)",
+        "...node internals..."
+      ]
+    },
+    {
+      "type": "aws:cdk:warning",
+      "data": "No cross-stack-reference strength configured, defaulting to \"strong\". We recommend you set feature flag \"@aws-cdk/core:defaultCrossStackReferences\" to \"both\", then deploy everywhere, then set it to \"weak\". Alternatively, set it to \"strong\" explicitly to lock in the current producer-protecting behavior. (See: https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/README.md#reference-strength) [ack: @aws-cdk/core:crossStackReferencesDefaultStrong]",
+      "trace": [
+        "Annotations.addMessage (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\annotations.js:1:3441)",
+        "Annotations.addWarningV2 (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\annotations.js:1:2129)",
+        "resolveValue (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\private\\refs.js:1:6065)",
+        "resolveReferences (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\private\\refs.js:1:4778)",
+        "prepareApp (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\private\\prepare-app.js:1:1514)",
+        "synthesize (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\private\\synthesis.js:1:3580)",
+        "App.synth (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\stage.js:1:4636)",
+        "App.synth (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\app.js:1:4814)",
+        "process.<anonymous> (C:\\Users\\坂本幸輝\\Documents\\sakeApp\\node_modules\\aws-cdk-lib\\core\\lib\\app.js:1:3773)",
+        "Object.onceWrapper (node:events:633:26)",
+        "process.emit (node:events:518:28)"
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/SyncFlavorChartsScheduleRuleName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SyncFlavorChartsScheduleRuleName"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new BatchStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/batch-stack.js:41:9)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:29 (:)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/FlavorSyncFunction/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FlavorSyncFunction9B62B58A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new BatchStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/batch-stack.js:12:36)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:29 (:)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/SyncFlavorChartsSchedule/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SyncFlavorChartsSchedule74559657"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Rule2 in aws-cdk-lib...",
+        "new BatchStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/batch-stack.js:30:42)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:29 (:)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/SyncFlavorChartsSchedule/AllowEventRuledevSakeAppBatchFlavorSyncFunction262E1B0C": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SyncFlavorChartsScheduleAllowEventRuledevSakeAppBatchFlavorSyncFunction262E1B0C6C31350A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.<anonymous> in aws-cdk-lib...",
+        "new BatchStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/batch-stack.js:40:34)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:29 (:)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/CDKMetadata/Condition": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadataAvailable"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/FlavorSyncFunction/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FlavorSyncFunctionServiceRoleA6C2A34A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new BatchStack (file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/lib/batch-stack.js:12:36)",
+        "file:///C:/Users/%E5%9D%82%E6%9C%AC%E5%B9%B8%E8%BC%9D/Documents/sakeApp/infra/dist/bin/app.js:29 (:)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/dev-SakeAppBatch/FlavorSyncFunction/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FlavorSyncFunctionServiceRoleDefaultPolicy25C98A87"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ]
+}

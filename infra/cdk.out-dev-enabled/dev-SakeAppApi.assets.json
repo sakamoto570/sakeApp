@@ -1,0 +1,20 @@
+{
+  "version": "54.0.0",
+  "files": {
+    "955a6149619edf9b5a46145302fe81f8ee988b2325cb65c9aaf1370c8412e725": {
+      "displayName": "dev-SakeAppApi Template",
+      "source": {
+        "path": "dev-SakeAppApi.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-01d828fc": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "955a6149619edf9b5a46145302fe81f8ee988b2325cb65c9aaf1370c8412e725.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

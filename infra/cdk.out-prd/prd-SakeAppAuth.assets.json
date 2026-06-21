@@ -1,0 +1,20 @@
+{
+  "version": "54.0.0",
+  "files": {
+    "f5a41e3b71949ec10f37da7680a690a8fd332c18321e66af1c701eec878a257a": {
+      "displayName": "prd-SakeAppAuth Template",
+      "source": {
+        "path": "prd-SakeAppAuth.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-edc4086c": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "f5a41e3b71949ec10f37da7680a690a8fd332c18321e66af1c701eec878a257a.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
