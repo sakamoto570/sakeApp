@@ -34,12 +34,15 @@ const enableSchedule =
 const database = new DatabaseStack(app, `${stage}-SakeAppDatabase`, {
   stage,
 });
-const auth = new AuthStack(app, `${stage}-SakeAppAuth`);
+const auth = new AuthStack(app, `${stage}-SakeAppAuth`, {
+  stage,
+});
 
 new ApiStack(app, `${stage}-SakeAppApi`, {
   sakeMasterTable: database.sakeMasterTable,
   userActionsTable: database.userActionsTable,
   userPool: auth.userPool,
+  userPoolClient: auth.userPoolClient,
 });
 
 new BatchStack(app, `${stage}-SakeAppBatch`, {
