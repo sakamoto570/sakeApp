@@ -15,8 +15,8 @@ interface UserActionBase {
   userId: string;
   sakeId: string;
   sakeNameSnapshot: string;
-  breweryNameSnapshot: string;
-  flavorSnapshot: FlavorProfile;
+  breweryNameSnapshot?: string;
+  flavorSnapshot?: FlavorProfile;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,7 +29,7 @@ export interface UserFavoriteItem extends UserActionBase {
 export interface UserDrinkItem extends UserActionBase {
   actionKey: `DRINK#${string}`;
   actionType: "DRINK";
-  rating: DrinkRating;
+  rating?: DrinkRating;
   memo?: string;
   drankAt: string;
 }

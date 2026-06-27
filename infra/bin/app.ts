@@ -39,6 +39,7 @@ const auth = new AuthStack(app, `${stage}-SakeAppAuth`, {
 });
 
 new ApiStack(app, `${stage}-SakeAppApi`, {
+  stage,
   sakeMasterTable: database.sakeMasterTable,
   userActionsTable: database.userActionsTable,
   userPool: auth.userPool,
