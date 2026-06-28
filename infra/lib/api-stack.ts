@@ -94,6 +94,16 @@ export class ApiStack extends Stack {
     });
 
     this.httpApi.addRoutes({
+      path: "/favorites/{sakeId}",
+      methods: [HttpMethod.DELETE],
+      integration: new HttpLambdaIntegration(
+        "DeleteFavoriteIntegration",
+        backendFunction,
+      ),
+      authorizer: this.cognitoJwtAuthorizer,
+    });
+
+    this.httpApi.addRoutes({
       path: "/me/sakes",
       methods: [HttpMethod.GET],
       integration: new HttpLambdaIntegration(

@@ -15,6 +15,10 @@ interface LambdaDecoratedRequest extends FastifyRequest {
   };
 }
 
+interface DeleteFavoriteParams {
+  sakeId?: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -103,7 +107,46 @@ export const favoriteRoutes: FastifyPluginAsync = async (app) => {
     return reply.status(201).send({ data: favorite });
   });
 
-  app.delete("/:sakeId", async () => {
-    throw new Error("Not implemented");
+  app.delete<{
+    Params: DeleteFavoriteParams;
+  }>("/:sakeId", async (request, reply) => {
+    const event = (request as LambdaDecoratedRequest).awsLambda?.event;
+    const userId = event ? getAuthenticatedUserId(event) : undefined;
+
+    if (!userId) {
+      return reply.status(401).send({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication is required",
+        },
+      });
+    }
+
+    const { sakeId } = request.params;
+
+    if (!isNonEmptyString(sakeId)) {
+      return reply.status(400).send({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "sakeId is required",
+        },
+      });
+    }
+
+    try {
+      const favoriteService = new FavoriteService(getUserActionRepository());
+      await favoriteService.deleteFavorite(userId, sakeId);
+
+      return reply.send({ success: true });
+    } catch (error) {
+      request.log.error(error);
+
+      return reply.status(500).send({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete favorite",
+        },
+      });
+    }
   });
 };

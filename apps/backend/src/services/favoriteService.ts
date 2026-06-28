@@ -39,4 +39,8 @@ export class FavoriteService {
       updatedAt: favorite.updatedAt,
     };
   }
+
+  async deleteFavorite(userId: string, sakeId: string): Promise<void> {
+    await this.userActionRepository.deleteFavorite(userId, sakeId);
+  }
 }

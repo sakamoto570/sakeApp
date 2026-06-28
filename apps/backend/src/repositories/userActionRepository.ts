@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
+  DeleteCommand,
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
@@ -10,6 +11,7 @@ import type { UserDrinkItem, UserFavoriteItem } from "@sake-app/shared";
 export interface UserActionRepository {
   putDrink(item: UserDrinkItem): Promise<void>;
   putFavorite(item: UserFavoriteItem): Promise<UserFavoriteItem>;
+  deleteFavorite(userId: string, sakeId: string): Promise<void>;
   findDrinksByUserId(userId: string): Promise<UserDrinkItem[]>;
   findFavoritesByUserId(userId: string): Promise<UserFavoriteItem[]>;
 }
@@ -83,6 +85,18 @@ export class DynamoDbUserActionRepository implements UserActionRepository {
     );
 
     return result.Attributes as UserFavoriteItem;
+  }
+
+  async deleteFavorite(userId: string, sakeId: string): Promise<void> {
+    await this.client.send(
+      new DeleteCommand({
+        TableName: this.tableName,
+        Key: {
+          userId,
+          actionKey: `FAVORITE#${sakeId}`,
+        },
+      }),
+    );
   }
 
   async findDrinksByUserId(userId: string): Promise<UserDrinkItem[]> {
