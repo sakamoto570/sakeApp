@@ -13,6 +13,10 @@ import type { IUserPool, IUserPoolClient } from "aws-cdk-lib/aws-cognito";
 import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import type { ITable } from "aws-cdk-lib/aws-dynamodb";
 import {
+  Effect,
+  PolicyStatement,
+} from "aws-cdk-lib/aws-iam";
+import {
   Architecture,
   Runtime,
   Tracing,
@@ -28,6 +32,7 @@ interface ApiStackProps extends StackProps {
   userActionsTable: ITable;
   userPool: IUserPool;
   userPoolClient: IUserPoolClient;
+  bedrockModelId?: string;
 }
 
 export class ApiStack extends Stack {
@@ -58,6 +63,9 @@ export class ApiStack extends Stack {
       timeout: Duration.seconds(30),
       tracing: Tracing.ACTIVE,
       environment: {
+        BEDROCK_MODEL_ID:
+          props.bedrockModelId ??
+          "anthropic.claude-3-haiku-20240307-v1:0",
         SAKE_MASTER_TABLE_NAME: props.sakeMasterTable.tableName,
         USER_ACTIONS_TABLE_NAME: props.userActionsTable.tableName,
       },
@@ -70,6 +78,13 @@ export class ApiStack extends Stack {
 
     props.userActionsTable.grantReadWriteData(backendFunction);
     props.sakeMasterTable.grantReadData(backendFunction);
+    backendFunction.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["bedrock:InvokeModel"],
+        resources: ["*"],
+      }),
+    );
 
     this.httpApi = new HttpApi(this, "HttpApi", {
       apiName: `${props.stage}-sake-api`,

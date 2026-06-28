@@ -15,6 +15,7 @@ import {
   RecommendationTargetFlavorMissingError,
   RecommendationTargetNotFoundError,
 } from "../services/recommendationService";
+import { RecommendationReasonService } from "../services/recommendationReasonService";
 import { SakeSearchService } from "../services/sakeSearchService";
 
 interface LambdaDecoratedRequest extends FastifyRequest {
@@ -25,6 +26,10 @@ interface LambdaDecoratedRequest extends FastifyRequest {
 
 interface SearchQuery {
   q?: string;
+}
+
+interface RecommendationQuery {
+  withReason?: string;
 }
 
 interface SakeIdParams {
@@ -141,6 +146,7 @@ export const sakeRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{
     Params: SakeIdParams;
+    Querystring: RecommendationQuery;
   }>("/:sakeId/recommendations", async (request, reply) => {
     const event = (request as LambdaDecoratedRequest).awsLambda?.event;
     const userId = event ? getAuthenticatedUserId(event) : undefined;
@@ -183,7 +189,29 @@ export const sakeRoutes: FastifyPluginAsync = async (app) => {
         "Calculated sake recommendations",
       );
 
-      return reply.send(result.recommendations);
+      if (request.query.withReason !== "true") {
+        return reply.send(result.recommendations);
+      }
+
+      try {
+        const reasonService = new RecommendationReasonService();
+        const recommendationsWithReasons = await reasonService.addReasons(
+          result.target,
+          result.recommendations,
+        );
+
+        return reply.send(recommendationsWithReasons);
+      } catch (error) {
+        request.log.error(
+          {
+            sakeId,
+            error,
+          },
+          "Failed to generate recommendation reasons",
+        );
+
+        return reply.send(result.recommendations);
+      }
     } catch (error) {
       if (error instanceof RecommendationTargetNotFoundError) {
         return reply.status(404).send({

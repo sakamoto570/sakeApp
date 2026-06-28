@@ -36,6 +36,11 @@ export interface SakeFlavorRecommendation {
   flavor: FlavorProfile;
 }
 
+export interface SakeFlavorRecommendationWithReason
+  extends SakeFlavorRecommendation {
+  reason?: string;
+}
+
 export interface SakeSearchResult {
   sakeId: string;
   name: string;

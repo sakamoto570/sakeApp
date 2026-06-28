@@ -16,6 +16,10 @@ export interface RecommendationStats {
 }
 
 export interface RecommendationResult {
+  target: {
+    sakeId: string;
+    flavor: FlavorProfile;
+  };
   recommendations: SakeFlavorRecommendation[];
   stats: RecommendationStats;
 }
@@ -88,6 +92,10 @@ export class RecommendationService {
       .slice(0, RECOMMENDATION_LIMIT);
 
     return {
+      target: {
+        sakeId,
+        flavor: target.flavor,
+      },
       recommendations,
       stats: {
         fetchedCount: items.length,

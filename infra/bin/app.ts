@@ -9,6 +9,8 @@ const app = new App();
 
 const stage = app.node.tryGetContext("stage") ?? process.env.CDK_STAGE ?? "dev";
 const enableScheduleContext = app.node.tryGetContext("enableSchedule");
+const bedrockModelId =
+  app.node.tryGetContext("bedrockModelId") ?? process.env.BEDROCK_MODEL_ID;
 
 if (typeof stage !== "string" || !/^[a-z0-9-]+$/.test(stage)) {
   throw new Error(
@@ -39,6 +41,8 @@ const auth = new AuthStack(app, `${stage}-SakeAppAuth`, {
 });
 
 new ApiStack(app, `${stage}-SakeAppApi`, {
+  bedrockModelId:
+    typeof bedrockModelId === "string" ? bedrockModelId : undefined,
   stage,
   sakeMasterTable: database.sakeMasterTable,
   userActionsTable: database.userActionsTable,
