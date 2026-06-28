@@ -3,11 +3,13 @@ import {
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { UserDrinkItem, UserFavoriteItem } from "@sake-app/shared";
 
 export interface UserActionRepository {
   putDrink(item: UserDrinkItem): Promise<void>;
+  putFavorite(item: UserFavoriteItem): Promise<UserFavoriteItem>;
   findDrinksByUserId(userId: string): Promise<UserDrinkItem[]>;
   findFavoritesByUserId(userId: string): Promise<UserFavoriteItem[]>;
 }
@@ -27,6 +29,60 @@ export class DynamoDbUserActionRepository implements UserActionRepository {
           "attribute_not_exists(userId) AND attribute_not_exists(actionKey)",
       }),
     );
+  }
+
+  async putFavorite(item: UserFavoriteItem): Promise<UserFavoriteItem> {
+    const setExpressions = [
+      "actionType = :actionType",
+      "sakeId = :sakeId",
+      "sakeNameSnapshot = :sakeNameSnapshot",
+      "createdAt = if_not_exists(createdAt, :createdAt)",
+      "updatedAt = :updatedAt",
+    ];
+    const removeExpressions: string[] = [];
+    const expressionAttributeValues: Record<string, unknown> = {
+      ":actionType": item.actionType,
+      ":sakeId": item.sakeId,
+      ":sakeNameSnapshot": item.sakeNameSnapshot,
+      ":createdAt": item.createdAt,
+      ":updatedAt": item.updatedAt,
+    };
+
+    if (item.breweryNameSnapshot === undefined) {
+      removeExpressions.push("breweryNameSnapshot");
+    } else {
+      setExpressions.push("breweryNameSnapshot = :breweryNameSnapshot");
+      expressionAttributeValues[":breweryNameSnapshot"] =
+        item.breweryNameSnapshot;
+    }
+
+    if (item.flavorSnapshot === undefined) {
+      removeExpressions.push("flavorSnapshot");
+    } else {
+      setExpressions.push("flavorSnapshot = :flavorSnapshot");
+      expressionAttributeValues[":flavorSnapshot"] = item.flavorSnapshot;
+    }
+
+    const updateExpressions = [`SET ${setExpressions.join(", ")}`];
+
+    if (removeExpressions.length > 0) {
+      updateExpressions.push(`REMOVE ${removeExpressions.join(", ")}`);
+    }
+
+    const result = await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          userId: item.userId,
+          actionKey: item.actionKey,
+        },
+        UpdateExpression: updateExpressions.join(" "),
+        ExpressionAttributeValues: expressionAttributeValues,
+        ReturnValues: "ALL_NEW",
+      }),
+    );
+
+    return result.Attributes as UserFavoriteItem;
   }
 
   async findDrinksByUserId(userId: string): Promise<UserDrinkItem[]> {
