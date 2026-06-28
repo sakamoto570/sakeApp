@@ -2,11 +2,14 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   PutCommand,
+  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { UserDrinkItem } from "@sake-app/shared";
+import type { UserDrinkItem, UserFavoriteItem } from "@sake-app/shared";
 
 export interface UserActionRepository {
   putDrink(item: UserDrinkItem): Promise<void>;
+  findDrinksByUserId(userId: string): Promise<UserDrinkItem[]>;
+  findFavoritesByUserId(userId: string): Promise<UserFavoriteItem[]>;
 }
 
 export class DynamoDbUserActionRepository implements UserActionRepository {
@@ -24,6 +27,45 @@ export class DynamoDbUserActionRepository implements UserActionRepository {
           "attribute_not_exists(userId) AND attribute_not_exists(actionKey)",
       }),
     );
+  }
+
+  async findDrinksByUserId(userId: string): Promise<UserDrinkItem[]> {
+    return this.queryUserActionsByPrefix<UserDrinkItem>(userId, "DRINK#");
+  }
+
+  async findFavoritesByUserId(userId: string): Promise<UserFavoriteItem[]> {
+    return this.queryUserActionsByPrefix<UserFavoriteItem>(
+      userId,
+      "FAVORITE#",
+    );
+  }
+
+  private async queryUserActionsByPrefix<T>(
+    userId: string,
+    actionKeyPrefix: string,
+  ): Promise<T[]> {
+    const items: T[] = [];
+    let exclusiveStartKey: Record<string, unknown> | undefined;
+
+    do {
+      const result = await this.client.send(
+        new QueryCommand({
+          TableName: this.tableName,
+          KeyConditionExpression:
+            "userId = :userId AND begins_with(actionKey, :actionKeyPrefix)",
+          ExpressionAttributeValues: {
+            ":userId": userId,
+            ":actionKeyPrefix": actionKeyPrefix,
+          },
+          ExclusiveStartKey: exclusiveStartKey,
+        }),
+      );
+
+      items.push(...((result.Items ?? []) as T[]));
+      exclusiveStartKey = result.LastEvaluatedKey;
+    } while (exclusiveStartKey);
+
+    return items;
   }
 }
 

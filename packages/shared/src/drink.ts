@@ -19,3 +19,12 @@ export interface DrinkRecord extends CreateDrinkRequest {
   updatedAt: string;
   createdAt: string;
 }
+
+export interface DrunkSakeSummary {
+  sakeId: string;
+  sakeName: string;
+  breweryName?: string;
+  flavor?: FlavorProfile;
+  lastDrankAt: string;
+  isFavorite: boolean;
+}

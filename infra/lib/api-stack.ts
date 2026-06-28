@@ -83,6 +83,16 @@ export class ApiStack extends Stack {
       authorizer: this.cognitoJwtAuthorizer,
     });
 
+    this.httpApi.addRoutes({
+      path: "/me/sakes",
+      methods: [HttpMethod.GET],
+      integration: new HttpLambdaIntegration(
+        "ListDrunkSakesIntegration",
+        backendFunction,
+      ),
+      authorizer: this.cognitoJwtAuthorizer,
+    });
+
     new CfnOutput(this, "HttpApiEndpoint", {
       value: this.httpApi.apiEndpoint,
       description: "HTTP API endpoint",
