@@ -66,12 +66,17 @@ function parseCreateFavoriteRequest(
     return { message: "flavorSnapshot is invalid" };
   }
 
+  if (body.imageUrl !== undefined && typeof body.imageUrl !== "string") {
+    return { message: "imageUrl must be a string" };
+  }
+
   return {
     data: {
       sakeId: body.sakeId,
       sakeNameSnapshot: body.sakeNameSnapshot,
       breweryNameSnapshot: body.breweryNameSnapshot,
       flavorSnapshot: body.flavorSnapshot,
+      imageUrl: body.imageUrl,
     },
   };
 }

@@ -65,6 +65,13 @@ export class DynamoDbUserActionRepository implements UserActionRepository {
       expressionAttributeValues[":flavorSnapshot"] = item.flavorSnapshot;
     }
 
+    if (item.imageUrl === undefined) {
+      removeExpressions.push("imageUrl");
+    } else {
+      setExpressions.push("imageUrl = :imageUrl");
+      expressionAttributeValues[":imageUrl"] = item.imageUrl;
+    }
+
     const updateExpressions = [`SET ${setExpressions.join(", ")}`];
 
     if (removeExpressions.length > 0) {

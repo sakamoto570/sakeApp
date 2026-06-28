@@ -22,6 +22,7 @@ export class FavoriteService {
       sakeNameSnapshot: request.sakeNameSnapshot,
       breweryNameSnapshot: request.breweryNameSnapshot,
       flavorSnapshot: request.flavorSnapshot,
+      imageUrl: request.imageUrl,
       createdAt: now,
       updatedAt: now,
     };
@@ -33,6 +34,7 @@ export class FavoriteService {
       sakeNameSnapshot: favorite.sakeNameSnapshot,
       breweryNameSnapshot: favorite.breweryNameSnapshot,
       flavorSnapshot: favorite.flavorSnapshot,
+      imageUrl: favorite.imageUrl,
       actionKey: favorite.actionKey,
       actionType: favorite.actionType,
       createdAt: favorite.createdAt,

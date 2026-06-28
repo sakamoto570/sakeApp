@@ -43,6 +43,8 @@ export type MySakeItem = {
   breweryName?: string;
   flavor?: FlavorProfile;
   imageUrl?: string;
+  rating?: number;
+  memo?: string;
   isFavorite: boolean;
   lastDrankAt: string;
 };
@@ -70,6 +72,7 @@ export type CreateFavoriteRequest = {
   sakeNameSnapshot: string;
   breweryNameSnapshot?: string;
   flavorSnapshot?: FlavorProfile;
+  imageUrl?: string;
 };
 
 export type FavoriteItem = {

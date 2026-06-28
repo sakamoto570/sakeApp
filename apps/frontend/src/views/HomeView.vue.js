@@ -1,22 +1,12 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
-import { createImageViewUrl } from "../api/imageApi";
+import SakeCard from "../components/sake/SakeCard.vue";
 import { getMySakes, getRecommendations, getSakeDetail, searchSakes, } from "../api/sakeApi";
-const flavorAxes = [
-    { key: "fruity", label: "華やか" },
-    { key: "mellow", label: "芳醇" },
-    { key: "rich", label: "重厚" },
-    { key: "calm", label: "穏やか" },
-    { key: "dry", label: "ドライ" },
-    { key: "light", label: "軽快" },
-];
-const recommendationNameSamples = ["伯楽星", "鳳凰美田", "来福"];
 const demoMySakes = [
     {
         sakeId: "144",
         sakeName: "十四代",
         breweryName: "高木酒造",
-        imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
         flavor: {
             fruity: 0.88,
             mellow: 0.78,
@@ -25,15 +15,16 @@ const demoMySakes = [
             dry: 0.32,
             light: 0.72,
         },
-        isFavorite: true,
+        imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
         rating: 4.5,
+        memo: "フルーティーで飲みやすい。バランスが良い。",
+        isFavorite: true,
         lastDrankAt: "2026-06-18",
     },
     {
         sakeId: "109",
         sakeName: "新政",
         breweryName: "新政酒造",
-        imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
         flavor: {
             fruity: 0.76,
             mellow: 0.54,
@@ -42,18 +33,28 @@ const demoMySakes = [
             dry: 0.5,
             light: 0.82,
         },
-        isFavorite: false,
         rating: 4.2,
+        memo: "爽やかで透明感がある。酸味が心地よい。",
+        isFavorite: false,
         lastDrankAt: "2026-06-10",
     },
     {
-        sakeId: "887",
-        sakeName: "蔵出し直汲み",
+        sakeId: "manual#kuradashi",
+        sakeName: "蔵出し直汲み 純米生原酒",
         breweryName: "○○酒造",
         imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
-        isFavorite: true,
         rating: 4,
+        memo: "さけのわ未登録。開けたてのガス感がよかった。",
+        isFavorite: true,
         lastDrankAt: "2026-05-30",
+    },
+    {
+        sakeId: "manual#noimage",
+        sakeName: "旅先で飲んだ地酒",
+        breweryName: "小さな酒蔵",
+        memo: "画像も風味データも無い手入力記録。",
+        isFavorite: false,
+        lastDrankAt: "2026-05-12",
     },
 ];
 const demoSearchResults = [
@@ -86,19 +87,8 @@ const demoRecommendations = [
             light: 0.7,
         },
     },
-    {
-        sakeId: "232",
-        similarity: 0.89,
-        flavor: {
-            fruity: 0.7,
-            mellow: 0.58,
-            rich: 0.38,
-            calm: 0.56,
-            dry: 0.48,
-            light: 0.78,
-        },
-    },
 ];
+const recommendationNames = ["伯楽星", "鳳凰美田"];
 const mode = ref("record");
 const mySakes = ref([]);
 const searchQuery = ref("");
@@ -110,24 +100,14 @@ const isSearching = ref(false);
 const isLoadingRecommendations = ref(false);
 const noticeMessage = ref(null);
 const searchNoticeMessage = ref(null);
-const imageViewUrls = ref({});
-const mySakeCards = computed(() => mySakes.value.map((sake) => ({
-    sakeId: sake.sakeId,
-    name: sake.sakeName,
-    breweryName: sake.breweryName,
-    flavor: sake.flavor,
-    isFavorite: sake.isFavorite,
-    rating: sake.rating,
-    imageUrl: sake.imageUrl,
-    meta: sake.lastDrankAt,
-    memo: "記録した時点の情報を表示しています。",
-})));
-const recommendationCards = computed(() => recommendations.value.map((sake, index) => ({
-    sakeId: sake.sakeId,
-    name: recommendationNameSamples[index] ?? `sake #${sake.sakeId}`,
-    flavor: sake.flavor,
-    meta: `類似度 ${sake.similarity.toFixed(2)}`,
+const recommendationCards = computed(() => recommendations.value.map((recommendation, index) => ({
+    sakeId: recommendation.sakeId,
+    sakeName: recommendationNames[index] ?? `sake #${recommendation.sakeId}`,
+    flavor: recommendation.flavor,
+    rating: Number(recommendation.similarity.toFixed(2)),
     memo: "味わいが近い候補です。",
+    isFavorite: false,
+    lastDrankAt: `類似度 ${recommendation.similarity.toFixed(2)}`,
 })));
 function setMode(nextMode) {
     mode.value = nextMode;
@@ -146,28 +126,7 @@ async function loadMySakes() {
     }
     finally {
         isLoadingMySakes.value = false;
-        void resolveImageViewUrls();
     }
-}
-async function resolveImageViewUrls() {
-    const nextImageViewUrls = {};
-    await Promise.all(mySakes.value.map(async (sake) => {
-        if (!sake.imageUrl) {
-            return;
-        }
-        if (sake.imageUrl.startsWith("http")) {
-            nextImageViewUrls[sake.imageUrl] = sake.imageUrl;
-            return;
-        }
-        try {
-            const response = await createImageViewUrl(sake.imageUrl);
-            nextImageViewUrls[sake.imageUrl] = response.viewUrl;
-        }
-        catch (error) {
-            console.error(error);
-        }
-    }));
-    imageViewUrls.value = nextImageViewUrls;
 }
 async function submitSearch() {
     const q = searchQuery.value.trim();
@@ -205,7 +164,6 @@ async function selectSake(result) {
         selectedSake.value = {
             sakeId: result.sakeId,
             name: result.name,
-            breweryName: result.name === "獺祭" ? "旭酒造" : undefined,
         };
         recommendations.value = demoRecommendations;
         searchNoticeMessage.value =
@@ -214,30 +172,6 @@ async function selectSake(result) {
     finally {
         isLoadingRecommendations.value = false;
     }
-}
-function normalizedFlavorValue(value) {
-    return Math.max(0, Math.min(1, value ?? 0));
-}
-function flavorValue(flavor, key) {
-    return normalizedFlavorValue(flavor?.[key]);
-}
-function formatFlavor(value) {
-    return `${Math.round(normalizedFlavorValue(value) * 100)}`;
-}
-function radarPoint(index, value, size = 150) {
-    const center = size / 2;
-    const radius = size * 0.34 * normalizedFlavorValue(value);
-    const angle = -Math.PI / 2 + (Math.PI * 2 * index) / flavorAxes.length;
-    return `${center + Math.cos(angle) * radius},${center + Math.sin(angle) * radius}`;
-}
-function radarPolygon(flavor, fallbackValue = 1) {
-    const values = flavor
-        ? flavorAxes.map((axis) => flavor[axis.key])
-        : flavorAxes.map(() => fallbackValue);
-    return values.map((value, index) => radarPoint(index, value)).join(" ");
-}
-function radarAxisEnd(index) {
-    return radarPoint(index, 1);
 }
 onMounted(() => {
     void loadMySakes();
@@ -253,11 +187,6 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['mode-button']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-button']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-button']} */ ;
-/** @type {__VLS_StyleScopedClasses['taste-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['record-meta']} */ ;
-/** @type {__VLS_StyleScopedClasses['memo-preview']} */ ;
-/** @type {__VLS_StyleScopedClasses['missing-title']} */ ;
-/** @type {__VLS_StyleScopedClasses['missing-text']} */ ;
 /** @type {__VLS_StyleScopedClasses['search-form']} */ ;
 /** @type {__VLS_StyleScopedClasses['search-form']} */ ;
 /** @type {__VLS_StyleScopedClasses['search-form']} */ ;
@@ -268,11 +197,6 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['mode-button']} */ ;
 /** @type {__VLS_StyleScopedClasses['card-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['result-strip']} */ ;
-/** @type {__VLS_StyleScopedClasses['flavor-section']} */ ;
-/** @type {__VLS_StyleScopedClasses['card-summary']} */ ;
-/** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
-/** @type {__VLS_StyleScopedClasses['card-image']} */ ;
-/** @type {__VLS_StyleScopedClasses['flavor-values']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "home" },
 });
@@ -336,276 +260,58 @@ if (__VLS_ctx.mode === 'record') {
         /** @type {__VLS_StyleScopedClasses['notice']} */ ;
         (__VLS_ctx.noticeMessage);
     }
-    if (!__VLS_ctx.isLoadingMySakes && __VLS_ctx.mySakeCards.length === 0) {
+    if (!__VLS_ctx.isLoadingMySakes && __VLS_ctx.mySakes.length === 0) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
             ...{ class: "status" },
         });
         /** @type {__VLS_StyleScopedClasses['status']} */ ;
     }
-    if (__VLS_ctx.mySakeCards.length > 0) {
+    if (__VLS_ctx.mySakes.length > 0) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "card-grid" },
         });
         /** @type {__VLS_StyleScopedClasses['card-grid']} */ ;
-        for (const [sake] of __VLS_vFor((__VLS_ctx.mySakeCards))) {
-            let __VLS_0;
-            /** @ts-ignore @type { | typeof __VLS_components.RouterLink | typeof __VLS_components.RouterLink} */
-            RouterLink;
+        for (const [sake] of __VLS_vFor((__VLS_ctx.mySakes))) {
+            const __VLS_0 = SakeCard;
             // @ts-ignore
             const __VLS_1 = __VLS_asFunctionalComponent1(__VLS_0, new __VLS_0({
+                ...{ 'onFavoriteChanged': {} },
                 key: (sake.sakeId),
-                ...{ class: "taste-card" },
-                to: (`/sakes/${sake.sakeId}`),
+                item: (sake),
             }));
             const __VLS_2 = __VLS_1({
+                ...{ 'onFavoriteChanged': {} },
                 key: (sake.sakeId),
-                ...{ class: "taste-card" },
-                to: (`/sakes/${sake.sakeId}`),
+                item: (sake),
             }, ...__VLS_functionalComponentArgsRest(__VLS_1));
-            /** @type {__VLS_StyleScopedClasses['taste-card']} */ ;
-            const { default: __VLS_5 } = __VLS_3.slots;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "card-summary" },
-            });
-            /** @type {__VLS_StyleScopedClasses['card-summary']} */ ;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "visual-stack" },
-            });
-            /** @type {__VLS_StyleScopedClasses['visual-stack']} */ ;
-            if (sake.imageUrl && __VLS_ctx.imageViewUrls[sake.imageUrl]) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.img)({
-                    ...{ class: "card-image" },
-                    src: (__VLS_ctx.imageViewUrls[sake.imageUrl]),
-                    alt: (`${sake.name} のラベル写真`),
-                });
-                /** @type {__VLS_StyleScopedClasses['card-image']} */ ;
-            }
-            else {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "bottle-thumb" },
-                    'aria-hidden': "true",
-                });
-                /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
-                    ...{ class: "bottle-neck" },
-                });
-                /** @type {__VLS_StyleScopedClasses['bottle-neck']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
-                    ...{ class: "bottle-body" },
-                });
-                /** @type {__VLS_StyleScopedClasses['bottle-body']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "bottle-label" },
-                });
-                /** @type {__VLS_StyleScopedClasses['bottle-label']} */ ;
-            }
-            if (sake.isFavorite) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "favorite-pill" },
-                });
-                /** @type {__VLS_StyleScopedClasses['favorite-pill']} */ ;
-            }
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "card-main" },
-            });
-            /** @type {__VLS_StyleScopedClasses['card-main']} */ ;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "card-topline" },
-            });
-            /** @type {__VLS_StyleScopedClasses['card-topline']} */ ;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "sake-name" },
-            });
-            /** @type {__VLS_StyleScopedClasses['sake-name']} */ ;
-            (sake.name);
-            if (sake.breweryName) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "sub-text" },
-                });
-                /** @type {__VLS_StyleScopedClasses['sub-text']} */ ;
-                (sake.breweryName);
-            }
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "record-meta" },
-            });
-            /** @type {__VLS_StyleScopedClasses['record-meta']} */ ;
-            if (sake.meta) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-                (sake.meta);
-            }
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "rating-chip" },
-            });
-            /** @type {__VLS_StyleScopedClasses['rating-chip']} */ ;
-            (sake.rating ?? "未評価");
-            if (!sake.flavor) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "missing-badge" },
-                });
-                /** @type {__VLS_StyleScopedClasses['missing-badge']} */ ;
-            }
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "memo-preview" },
-            });
-            /** @type {__VLS_StyleScopedClasses['memo-preview']} */ ;
-            (sake.memo);
-            if (sake.flavor) {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "flavor-section" },
-                });
-                /** @type {__VLS_StyleScopedClasses['flavor-section']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "radar-wrap" },
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-wrap']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.svg, __VLS_intrinsics.svg)({
-                    ...{ class: "radar" },
-                    viewBox: "0 0 150 150",
-                    'aria-hidden': "true",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
-                    ...{ class: "radar-grid radar-grid-outer" },
-                    points: (__VLS_ctx.radarPolygon()),
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-grid']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-grid-outer']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
-                    ...{ class: "radar-grid radar-grid-inner" },
-                    points: (__VLS_ctx.radarPolygon(undefined, 0.5)),
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-grid']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-grid-inner']} */ ;
-                for (const [_, index] of __VLS_vFor((__VLS_ctx.flavorAxes))) {
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.line)({
-                        key: (index),
-                        ...{ class: "radar-axis" },
-                        x1: "75",
-                        y1: "75",
-                        x2: (__VLS_ctx.radarAxisEnd(index).split(',')[0]),
-                        y2: (__VLS_ctx.radarAxisEnd(index).split(',')[1]),
-                    });
-                    /** @type {__VLS_StyleScopedClasses['radar-axis']} */ ;
-                    // @ts-ignore
-                    [mode, mode, loadMySakes, isLoadingMySakes, isLoadingMySakes, isLoadingMySakes, noticeMessage, noticeMessage, mySakeCards, mySakeCards, mySakeCards, imageViewUrls, imageViewUrls, radarPolygon, radarPolygon, flavorAxes, radarAxisEnd, radarAxisEnd,];
-                }
-                __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
-                    ...{ class: "radar-fill" },
-                    points: (__VLS_ctx.radarPolygon(sake.flavor)),
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-fill']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-top" },
-                    x: "75",
-                    y: "14",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-top']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-upper-right" },
-                    x: "134",
-                    y: "48",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-upper-right']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-lower-right" },
-                    x: "134",
-                    y: "105",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-lower-right']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-bottom" },
-                    x: "75",
-                    y: "142",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-bottom']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-lower-left" },
-                    x: "16",
-                    y: "105",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-lower-left']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-upper-left" },
-                    x: "16",
-                    y: "48",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-upper-left']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "flavor-values" },
-                    'aria-label': "風味の数値",
-                });
-                /** @type {__VLS_StyleScopedClasses['flavor-values']} */ ;
-                for (const [axis] of __VLS_vFor((__VLS_ctx.flavorAxes))) {
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        key: (axis.key),
-                        ...{ class: "flavor-value" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['flavor-value']} */ ;
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        ...{ class: "flavor-label" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['flavor-label']} */ ;
-                    (axis.label);
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        ...{ class: "flavor-number" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['flavor-number']} */ ;
-                    (__VLS_ctx.formatFlavor(__VLS_ctx.flavorValue(sake.flavor, axis.key)));
-                    // @ts-ignore
-                    [radarPolygon, flavorAxes, formatFlavor, flavorValue,];
-                }
-            }
-            else {
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "missing-flavor-section" },
-                });
-                /** @type {__VLS_StyleScopedClasses['missing-flavor-section']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "missing-icon" },
-                    'aria-hidden': "true",
-                });
-                /** @type {__VLS_StyleScopedClasses['missing-icon']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "missing-title" },
-                });
-                /** @type {__VLS_StyleScopedClasses['missing-title']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "missing-text" },
-                });
-                /** @type {__VLS_StyleScopedClasses['missing-text']} */ ;
-            }
-            // @ts-ignore
-            [];
+            let __VLS_5;
+            const __VLS_6 = {
+                /** @type {typeof __VLS_5.favoriteChanged} */
+                onFavoriteChanged: (__VLS_ctx.loadMySakes),
+            };
             var __VLS_3;
+            var __VLS_4;
             // @ts-ignore
-            [];
+            [mode, mode, loadMySakes, loadMySakes, isLoadingMySakes, isLoadingMySakes, isLoadingMySakes, noticeMessage, noticeMessage, mySakes, mySakes, mySakes,];
         }
     }
-    let __VLS_6;
+    let __VLS_7;
     /** @ts-ignore @type { | typeof __VLS_components.RouterLink | typeof __VLS_components.RouterLink} */
     RouterLink;
     // @ts-ignore
-    const __VLS_7 = __VLS_asFunctionalComponent1(__VLS_6, new __VLS_6({
+    const __VLS_8 = __VLS_asFunctionalComponent1(__VLS_7, new __VLS_7({
         ...{ class: "secondary-action" },
         to: "/drinks/new",
     }));
-    const __VLS_8 = __VLS_7({
+    const __VLS_9 = __VLS_8({
         ...{ class: "secondary-action" },
         to: "/drinks/new",
-    }, ...__VLS_functionalComponentArgsRest(__VLS_7));
+    }, ...__VLS_functionalComponentArgsRest(__VLS_8));
     /** @type {__VLS_StyleScopedClasses['secondary-action']} */ ;
-    const { default: __VLS_11 } = __VLS_9.slots;
+    const { default: __VLS_12 } = __VLS_10.slots;
     // @ts-ignore
     [];
-    var __VLS_9;
+    var __VLS_10;
 }
 else {
     __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
@@ -705,163 +411,27 @@ else {
             });
             /** @type {__VLS_StyleScopedClasses['card-grid']} */ ;
             for (const [sake] of __VLS_vFor((__VLS_ctx.recommendationCards))) {
-                let __VLS_12;
-                /** @ts-ignore @type { | typeof __VLS_components.RouterLink | typeof __VLS_components.RouterLink} */
-                RouterLink;
+                const __VLS_13 = SakeCard;
                 // @ts-ignore
-                const __VLS_13 = __VLS_asFunctionalComponent1(__VLS_12, new __VLS_12({
+                const __VLS_14 = __VLS_asFunctionalComponent1(__VLS_13, new __VLS_13({
+                    ...{ 'onFavoriteChanged': {} },
                     key: (sake.sakeId),
-                    ...{ class: "taste-card" },
-                    to: (`/sakes/${sake.sakeId}`),
+                    item: (sake),
                 }));
-                const __VLS_14 = __VLS_13({
+                const __VLS_15 = __VLS_14({
+                    ...{ 'onFavoriteChanged': {} },
                     key: (sake.sakeId),
-                    ...{ class: "taste-card" },
-                    to: (`/sakes/${sake.sakeId}`),
-                }, ...__VLS_functionalComponentArgsRest(__VLS_13));
-                /** @type {__VLS_StyleScopedClasses['taste-card']} */ ;
-                const { default: __VLS_17 } = __VLS_15.slots;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "card-summary recommendation-summary" },
-                });
-                /** @type {__VLS_StyleScopedClasses['card-summary']} */ ;
-                /** @type {__VLS_StyleScopedClasses['recommendation-summary']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "card-main" },
-                });
-                /** @type {__VLS_StyleScopedClasses['card-main']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "sake-name" },
-                });
-                /** @type {__VLS_StyleScopedClasses['sake-name']} */ ;
-                (sake.name);
-                if (sake.meta) {
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        ...{ class: "sub-text" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['sub-text']} */ ;
-                    (sake.meta);
-                }
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "memo-preview" },
-                });
-                /** @type {__VLS_StyleScopedClasses['memo-preview']} */ ;
-                (sake.memo);
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "flavor-section" },
-                });
-                /** @type {__VLS_StyleScopedClasses['flavor-section']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "radar-wrap" },
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-wrap']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.svg, __VLS_intrinsics.svg)({
-                    ...{ class: "radar" },
-                    viewBox: "0 0 150 150",
-                    'aria-hidden': "true",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
-                    ...{ class: "radar-grid radar-grid-outer" },
-                    points: (__VLS_ctx.radarPolygon()),
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-grid']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-grid-outer']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
-                    ...{ class: "radar-grid radar-grid-inner" },
-                    points: (__VLS_ctx.radarPolygon(undefined, 0.5)),
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-grid']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-grid-inner']} */ ;
-                for (const [_, index] of __VLS_vFor((__VLS_ctx.flavorAxes))) {
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.line)({
-                        key: (index),
-                        ...{ class: "radar-axis" },
-                        x1: "75",
-                        y1: "75",
-                        x2: (__VLS_ctx.radarAxisEnd(index).split(',')[0]),
-                        y2: (__VLS_ctx.radarAxisEnd(index).split(',')[1]),
-                    });
-                    /** @type {__VLS_StyleScopedClasses['radar-axis']} */ ;
-                    // @ts-ignore
-                    [radarPolygon, radarPolygon, flavorAxes, radarAxisEnd, radarAxisEnd, isSearching, selectedSake, selectedSake, isLoadingRecommendations, recommendationCards,];
-                }
-                __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
-                    ...{ class: "radar-fill" },
-                    points: (__VLS_ctx.radarPolygon(sake.flavor)),
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-fill']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-top" },
-                    x: "75",
-                    y: "14",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-top']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-upper-right" },
-                    x: "134",
-                    y: "48",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-upper-right']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-lower-right" },
-                    x: "134",
-                    y: "105",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-lower-right']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-bottom" },
-                    x: "75",
-                    y: "142",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-bottom']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-lower-left" },
-                    x: "16",
-                    y: "105",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-lower-left']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.text, __VLS_intrinsics.text)({
-                    ...{ class: "radar-label radar-label-upper-left" },
-                    x: "16",
-                    y: "48",
-                });
-                /** @type {__VLS_StyleScopedClasses['radar-label']} */ ;
-                /** @type {__VLS_StyleScopedClasses['radar-label-upper-left']} */ ;
-                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                    ...{ class: "flavor-values" },
-                    'aria-label': "風味の数値",
-                });
-                /** @type {__VLS_StyleScopedClasses['flavor-values']} */ ;
-                for (const [axis] of __VLS_vFor((__VLS_ctx.flavorAxes))) {
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        key: (axis.key),
-                        ...{ class: "flavor-value" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['flavor-value']} */ ;
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        ...{ class: "flavor-label" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['flavor-label']} */ ;
-                    (axis.label);
-                    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                        ...{ class: "flavor-number" },
-                    });
-                    /** @type {__VLS_StyleScopedClasses['flavor-number']} */ ;
-                    (__VLS_ctx.formatFlavor(__VLS_ctx.flavorValue(sake.flavor, axis.key)));
-                    // @ts-ignore
-                    [radarPolygon, flavorAxes, formatFlavor, flavorValue,];
-                }
+                    item: (sake),
+                }, ...__VLS_functionalComponentArgsRest(__VLS_14));
+                let __VLS_18;
+                const __VLS_19 = {
+                    /** @type {typeof __VLS_18.favoriteChanged} */
+                    onFavoriteChanged: (__VLS_ctx.loadMySakes),
+                };
+                var __VLS_16;
+                var __VLS_17;
                 // @ts-ignore
-                [];
-                var __VLS_15;
-                // @ts-ignore
-                [];
+                [loadMySakes, isSearching, selectedSake, selectedSake, isLoadingRecommendations, recommendationCards,];
             }
         }
     }

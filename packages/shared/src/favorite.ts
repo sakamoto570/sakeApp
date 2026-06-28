@@ -11,6 +11,7 @@ export interface Favorite {
   sakeNameSnapshot: string;
   breweryNameSnapshot?: string;
   flavorSnapshot?: FlavorProfile;
+  imageUrl?: string;
   actionKey: `FAVORITE#${string}`;
   actionType: "FAVORITE";
   updatedAt: string;
