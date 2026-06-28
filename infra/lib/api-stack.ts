@@ -104,6 +104,16 @@ export class ApiStack extends Stack {
     });
 
     this.httpApi.addRoutes({
+      path: "/sakes/search",
+      methods: [HttpMethod.GET],
+      integration: new HttpLambdaIntegration(
+        "SearchSakesIntegration",
+        backendFunction,
+      ),
+      authorizer: this.cognitoJwtAuthorizer,
+    });
+
+    this.httpApi.addRoutes({
       path: "/me/sakes",
       methods: [HttpMethod.GET],
       integration: new HttpLambdaIntegration(

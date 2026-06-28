@@ -29,3 +29,8 @@ export interface SakeRecommendation extends SakeSummary {
   similarity: number;
   reason: string;
 }
+
+export interface SakeSearchResult {
+  sakeId: string;
+  name: string;
+}
