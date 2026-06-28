@@ -11,6 +11,7 @@ import { createDrink } from "../api/drinkApi";
 import { getSakeDetail, searchSakes } from "../api/sakeApi";
 
 type FlavorKey = keyof FlavorProfile;
+type SelectionMode = "sakenowa" | "manual";
 
 const flavorLabels: { key: FlavorKey; label: string }[] = [
   { key: "fruity", label: "華やか" },
@@ -26,6 +27,9 @@ const router = useRouter();
 const searchQuery = ref("");
 const searchResults = ref<SakeSearchResult[]>([]);
 const selectedDetail = ref<SakeDetailResponse | null>(null);
+const selectionMode = ref<SelectionMode>("sakenowa");
+const manualName = ref("");
+const manualBreweryName = ref("");
 const rating = ref<number | "">("");
 const memo = ref("");
 const drankAt = ref(new Date().toISOString().slice(0, 10));
@@ -37,16 +41,35 @@ const searchError = ref<string | null>(null);
 const detailError = ref<string | null>(null);
 const saveError = ref<string | null>(null);
 
+const selectedRecord = computed<SakeDetailResponse | null>(() => {
+  if (selectionMode.value === "manual") {
+    const name = manualName.value.trim();
+
+    if (!name) {
+      return null;
+    }
+
+    return {
+      sakeId: createManualSakeId(name, manualBreweryName.value),
+      name,
+      breweryName: manualBreweryName.value.trim() || undefined,
+    };
+  }
+
+  return selectedDetail.value;
+});
+
 const canSave = computed(() => {
   const hasValidRating =
     rating.value === "" || (rating.value >= 1 && rating.value <= 5);
 
-  return Boolean(selectedDetail.value && drankAt.value && hasValidRating);
+  return Boolean(selectedRecord.value && drankAt.value && hasValidRating);
 });
 
 async function submitSearch() {
   const q = searchQuery.value.trim();
 
+  selectionMode.value = "sakenowa";
   searchError.value = null;
   detailError.value = null;
   saveError.value = null;
@@ -65,17 +88,21 @@ async function submitSearch() {
     searchResults.value = await searchSakes(q);
 
     if (searchResults.value.length === 0) {
-      searchError.value = "該当する銘柄が見つかりませんでした。";
+      searchError.value =
+        "該当する銘柄が見つかりませんでした。手入力でも記録できます。";
+      startManualEntry(q);
     }
   } catch (error) {
     console.error(error);
-    searchError.value = "銘柄検索に失敗しました。";
+    searchError.value =
+      "銘柄検索に失敗しました。手入力で記録を続けることもできます。";
   } finally {
     isSearching.value = false;
   }
 }
 
 async function selectSake(result: SakeSearchResult) {
+  selectionMode.value = "sakenowa";
   detailError.value = null;
   saveError.value = null;
   selectedDetail.value = null;
@@ -91,11 +118,20 @@ async function selectSake(result: SakeSearchResult) {
   }
 }
 
+function startManualEntry(seedName = searchQuery.value) {
+  selectionMode.value = "manual";
+  selectedDetail.value = null;
+  manualName.value = seedName.trim() || manualName.value;
+  detailError.value = null;
+  saveError.value = null;
+}
+
 async function submitDrink() {
   saveError.value = null;
+  const record = selectedRecord.value;
 
-  if (!selectedDetail.value) {
-    saveError.value = "銘柄を選択してください。";
+  if (!record) {
+    saveError.value = "銘柄を選択するか、手入力してください。";
     return;
   }
 
@@ -113,10 +149,10 @@ async function submitDrink() {
 
   try {
     await createDrink({
-      sakeId: selectedDetail.value.sakeId,
-      sakeNameSnapshot: selectedDetail.value.name,
-      breweryNameSnapshot: selectedDetail.value.breweryName,
-      flavorSnapshot: selectedDetail.value.flavor,
+      sakeId: record.sakeId,
+      sakeNameSnapshot: record.name,
+      breweryNameSnapshot: record.breweryName,
+      flavorSnapshot: record.flavor,
       rating: rating.value === "" ? undefined : rating.value,
       memo: memo.value.trim() || undefined,
       drankAt: drankAt.value,
@@ -131,8 +167,42 @@ async function submitDrink() {
   }
 }
 
+function createManualSakeId(name: string, breweryName: string) {
+  const source = `${name}:${breweryName.trim()}`.toLowerCase();
+  const encoded = encodeURIComponent(source)
+    .replace(/%/g, "")
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, 80);
+
+  return `manual#${encoded || Date.now().toString(36)}`;
+}
+
 function formatFlavorValue(flavor: FlavorProfile, key: FlavorKey) {
   return Math.round(Math.max(0, Math.min(1, flavor[key])) * 100);
+}
+
+function normalizedFlavorValue(value: number | undefined) {
+  return Math.max(0, Math.min(1, value ?? 0));
+}
+
+function radarPoint(index: number, value: number, size = 150): string {
+  const center = size / 2;
+  const radius = size * 0.34 * normalizedFlavorValue(value);
+  const angle = -Math.PI / 2 + (Math.PI * 2 * index) / flavorLabels.length;
+
+  return `${center + Math.cos(angle) * radius},${center + Math.sin(angle) * radius}`;
+}
+
+function radarPolygon(flavor?: FlavorProfile, fallbackValue = 1): string {
+  const values = flavor
+    ? flavorLabels.map((axis) => flavor[axis.key])
+    : flavorLabels.map(() => fallbackValue);
+
+  return values.map((value, index) => radarPoint(index, value)).join(" ");
+}
+
+function radarAxisEnd(index: number): string {
+  return radarPoint(index, 1);
 }
 </script>
 
@@ -141,7 +211,7 @@ function formatFlavorValue(flavor: FlavorProfile, key: FlavorKey) {
     <div class="page-heading">
       <div>
         <h1>新規飲酒記録</h1>
-        <p>飲んだ日本酒を検索して、評価やメモを残します。</p>
+        <p>さけのわに無い銘柄も、手入力でそのまま記録できます。</p>
       </div>
       <RouterLink class="back-link" to="/">戻る</RouterLink>
     </div>
@@ -159,6 +229,13 @@ function formatFlavorValue(flavor: FlavorProfile, key: FlavorKey) {
         </label>
         <button type="submit" :disabled="isSearching">
           {{ isSearching ? "検索中..." : "検索" }}
+        </button>
+        <button
+          type="button"
+          class="manual-entry-button"
+          @click="startManualEntry()"
+        >
+          手入力で記録
         </button>
       </form>
 
@@ -180,6 +257,34 @@ function formatFlavorValue(flavor: FlavorProfile, key: FlavorKey) {
       </div>
     </section>
 
+    <section v-if="selectionMode === 'manual'" class="panel manual-panel">
+      <div class="section-heading">
+        <h2>手入力の銘柄情報</h2>
+        <p class="status">さけのわ未登録として、風味データなしで保存します。</p>
+      </div>
+
+      <div class="manual-fields">
+        <label class="field">
+          <span>銘柄名</span>
+          <input
+            v-model="manualName"
+            type="text"
+            placeholder="例: 蔵出し直汲み 純米生原酒"
+            required
+          />
+        </label>
+
+        <label class="field">
+          <span>酒蔵名 任意</span>
+          <input
+            v-model="manualBreweryName"
+            type="text"
+            placeholder="例: ○○酒造"
+          />
+        </label>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="section-heading">
         <h2>選択中の日本酒</h2>
@@ -188,32 +293,98 @@ function formatFlavorValue(flavor: FlavorProfile, key: FlavorKey) {
 
       <p v-if="detailError" class="error-message">{{ detailError }}</p>
 
-      <div v-if="selectedDetail" class="selected-card">
-        <div>
-          <h3>{{ selectedDetail.name }}</h3>
-          <p v-if="selectedDetail.breweryName" class="sub-text">
-            {{ selectedDetail.breweryName }}
-          </p>
-          <p v-else class="sub-text">酒蔵名は未取得です。</p>
+      <div
+        v-if="selectedRecord"
+        class="selected-card"
+        :class="{ 'without-flavor': !selectedRecord.flavor }"
+      >
+        <div class="record-summary">
+          <div class="bottle-thumb" aria-hidden="true">
+            <span class="bottle-neck" />
+            <span class="bottle-body" />
+            <span class="bottle-label">酒</span>
+          </div>
+
+          <div class="record-main">
+            <div>
+              <h3>{{ selectedRecord.name }}</h3>
+              <p v-if="selectedRecord.breweryName" class="sub-text">
+                {{ selectedRecord.breweryName }}
+              </p>
+              <p v-else class="sub-text">酒蔵名は未入力です。</p>
+            </div>
+
+            <div class="record-meta">
+              <span>{{ drankAt || "飲酒日未入力" }}</span>
+              <span v-if="rating" class="rating-preview">
+                ★ {{ rating }}
+              </span>
+              <span v-else class="rating-preview muted">未評価</span>
+              <span v-if="selectionMode === 'manual'" class="manual-badge">
+                手入力
+              </span>
+            </div>
+
+            <p class="memo-preview">
+              {{ memo.trim() || "メモはまだ入力されていません。" }}
+            </p>
+          </div>
         </div>
 
-        <div v-if="selectedDetail.flavor" class="flavor-grid">
-          <span
-            v-for="flavor in flavorLabels"
-            :key="flavor.key"
-            class="flavor-item"
-          >
-            <span>{{ flavor.label }}</span>
-            <strong>
-              {{ formatFlavorValue(selectedDetail.flavor, flavor.key) }}
-            </strong>
-          </span>
+        <div v-if="selectedRecord.flavor" class="flavor-section">
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 150 150" aria-hidden="true">
+              <polygon class="radar-grid radar-grid-outer" :points="radarPolygon()" />
+              <polygon class="radar-grid radar-grid-inner" :points="radarPolygon(undefined, 0.5)" />
+              <line
+                v-for="(_, index) in flavorLabels"
+                :key="index"
+                class="radar-axis"
+                x1="75"
+                y1="75"
+                :x2="radarAxisEnd(index).split(',')[0]"
+                :y2="radarAxisEnd(index).split(',')[1]"
+              />
+              <polygon
+                class="radar-fill"
+                :points="radarPolygon(selectedRecord.flavor)"
+              />
+              <text class="radar-label radar-label-top" x="75" y="14">華やか</text>
+              <text class="radar-label radar-label-upper-right" x="134" y="48">芳醇</text>
+              <text class="radar-label radar-label-lower-right" x="134" y="105">重厚</text>
+              <text class="radar-label radar-label-bottom" x="75" y="142">穏やか</text>
+              <text class="radar-label radar-label-lower-left" x="16" y="105">ドライ</text>
+              <text class="radar-label radar-label-upper-left" x="16" y="48">軽快</text>
+            </svg>
+          </div>
+
+          <div class="flavor-grid">
+            <span
+              v-for="flavor in flavorLabels"
+              :key="flavor.key"
+              class="flavor-item"
+            >
+              <span>{{ flavor.label }}</span>
+              <strong>
+                {{ formatFlavorValue(selectedRecord.flavor, flavor.key) }}
+              </strong>
+            </span>
+          </div>
         </div>
-        <p v-else class="status">風味データはありません。</p>
+
+        <div v-else class="missing-flavor-section">
+          <div class="missing-icon" aria-hidden="true">!</div>
+          <div>
+            <h4>風味データ未取得</h4>
+            <p>
+              さけのわに無い、またはレーダーチャートが無い銘柄として保存します。評価・メモ・日付は通常通り記録できます。
+            </p>
+          </div>
+        </div>
       </div>
 
       <p v-else-if="!isLoadingDetail" class="status">
-        検索結果から銘柄を選択してください。
+        検索結果から銘柄を選ぶか、手入力で記録してください。
       </p>
     </section>
 
@@ -318,7 +489,13 @@ h3 {
   align-items: end;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.manual-fields {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .field {
@@ -351,7 +528,8 @@ textarea {
 .search-form button,
 .primary-button,
 .secondary-button,
-.back-link {
+.back-link,
+.manual-entry-button {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
@@ -371,11 +549,13 @@ textarea {
   cursor: pointer;
 }
 
+.manual-entry-button,
 .secondary-button,
 .back-link {
   background: #fff;
   border: 1px solid #aebbac;
   color: #173f2b;
+  cursor: pointer;
 }
 
 button:disabled {
@@ -422,14 +602,180 @@ button:disabled {
 }
 
 .selected-card {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, #dfe7dc, #aebbac) border-box;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgb(29 49 34 / 7%);
   display: grid;
   gap: 18px;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.record-summary {
+  align-items: stretch;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 112px minmax(0, 1fr);
+}
+
+.bottle-thumb {
+  align-items: center;
+  background: linear-gradient(180deg, #f3f6f1, #e8eee5);
+  border: 1px solid #dbe4d8;
+  border-radius: 14px;
+  display: grid;
+  justify-items: center;
+  min-height: 150px;
+  padding: 14px;
+  position: relative;
+}
+
+.bottle-neck {
+  background: #28583a;
+  border-radius: 5px 5px 2px 2px;
+  height: 42px;
+  margin-bottom: -8px;
+  width: 22px;
+}
+
+.bottle-body {
+  background: linear-gradient(90deg, #315f42, #598761 48%, #2d543d);
+  border-radius: 12px 12px 16px 16px;
+  height: 88px;
+  width: 42px;
+}
+
+.bottle-label {
+  background: #fff;
+  border-radius: 8px;
+  color: #173f2b;
+  font-weight: 700;
+  left: 50%;
+  padding: 5px 8px;
+  position: absolute;
+  top: 88px;
+  transform: translateX(-50%);
+}
+
+.record-main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.record-meta {
+  align-items: center;
+  color: #657064;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rating-preview {
+  color: #b88900;
+  font-weight: 700;
+}
+
+.rating-preview.muted {
+  color: #98a196;
+}
+
+.manual-badge {
+  background: #e7f1fb;
+  border-radius: 999px;
+  color: #2d6a9f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.memo-preview {
+  color: #34443a;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.flavor-section {
+  border-top: 1px solid #e4ebe1;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(170px, 240px) minmax(0, 1fr);
+  padding-top: 18px;
+}
+
+.radar-wrap {
+  display: grid;
+  min-height: 170px;
+  place-items: center;
+}
+
+.radar {
+  height: 170px;
+  overflow: visible;
+  width: 170px;
+}
+
+.radar-grid {
+  fill: #f8faf6;
+  stroke: #9caf98;
+  stroke-width: 1;
+}
+
+.radar-grid-outer {
+  stroke: #1b241d;
+  stroke-width: 1.2;
+}
+
+.radar-grid-inner {
+  fill: transparent;
+  stroke-dasharray: 3 3;
+}
+
+.radar-axis {
+  stroke: #d3ddd0;
+  stroke-width: 1;
+}
+
+.radar-fill {
+  fill: rgb(201 255 139 / 55%);
+  stroke: #3f7a4d;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.radar-label {
+  fill: #48604d;
+  font-size: 8px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+
+.radar-label-top,
+.radar-label-bottom {
+  text-anchor: middle;
+}
+
+.radar-label-upper-right,
+.radar-label-lower-right {
+  text-anchor: end;
+}
+
+.radar-label-upper-left,
+.radar-label-lower-left {
+  text-anchor: start;
 }
 
 .flavor-grid {
+  align-content: center;
   display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .flavor-item {
@@ -439,12 +785,16 @@ button:disabled {
   display: flex;
   gap: 8px;
   justify-content: space-between;
+  min-width: 0;
   padding: 8px 12px;
 }
 
 .flavor-item span {
   color: #4f5f52;
   font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .flavor-item strong {
@@ -452,11 +802,45 @@ button:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+.missing-flavor-section {
+  align-items: center;
+  background: #f6f9fb;
+  border: 1px solid #d8e6f1;
+  border-radius: 14px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 16px;
+}
+
+.missing-icon {
+  align-items: center;
+  background: #e7f1fb;
+  border-radius: 999px;
+  color: #2d6a9f;
+  display: flex;
+  font-weight: 800;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.missing-flavor-section h4 {
+  color: #173f2b;
+  font-size: 0.95rem;
+  margin: 0 0 4px;
+}
+
+.missing-flavor-section p {
+  color: #657064;
+  line-height: 1.6;
+}
+
 .form-panel {
   max-width: 680px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .page-heading,
   .section-heading,
   .actions {
@@ -464,7 +848,19 @@ button:disabled {
     flex-direction: column;
   }
 
-  .search-form {
+  .search-form,
+  .manual-fields,
+  .record-summary,
+  .flavor-section,
+  .missing-flavor-section {
+    grid-template-columns: 1fr;
+  }
+
+  .bottle-thumb {
+    min-height: 120px;
+  }
+
+  .flavor-grid {
     grid-template-columns: 1fr;
   }
 }
