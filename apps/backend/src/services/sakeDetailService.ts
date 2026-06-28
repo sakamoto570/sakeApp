@@ -1,4 +1,4 @@
-import type { SakeDetail } from "@sake-app/shared";
+import type { SakeDetailResponse } from "@sake-app/shared";
 
 import {
   fetchBrands,
@@ -24,7 +24,7 @@ export class SakeDetailService {
       fetchBreweries,
   ) {}
 
-  async getDetail(sakeId: string): Promise<SakeDetail> {
+  async getDetail(sakeId: string): Promise<SakeDetailResponse> {
     const [brands, breweries, sakeMasterItem] = await Promise.all([
       this.brandsClient(),
       this.breweriesClient(),

@@ -1,7 +1,7 @@
 import type {
   FlavorProfile,
-  SakeFlavorRecommendation,
   SakeMasterItem,
+  SakeRecommendation,
 } from "@sake-app/shared";
 import { cosineSimilarity } from "@sake-app/utils";
 
@@ -20,7 +20,7 @@ export interface RecommendationResult {
     sakeId: string;
     flavor: FlavorProfile;
   };
-  recommendations: SakeFlavorRecommendation[];
+  recommendations: SakeRecommendation[];
   stats: RecommendationStats;
 }
 
@@ -74,7 +74,7 @@ export class RecommendationService {
     let excludedCount = 0;
 
     const recommendations = items
-      .flatMap((item): SakeFlavorRecommendation[] => {
+      .flatMap((item): SakeRecommendation[] => {
         if (item.sakeId === sakeId || !hasFlavor(item)) {
           excludedCount += 1;
           return [];

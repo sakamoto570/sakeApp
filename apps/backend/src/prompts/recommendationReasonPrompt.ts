@@ -1,6 +1,6 @@
 import type {
   FlavorProfile,
-  SakeFlavorRecommendation,
+  SakeRecommendation,
 } from "@sake-app/shared";
 
 interface RecommendationReasonPromptInput {
@@ -8,7 +8,7 @@ interface RecommendationReasonPromptInput {
     sakeId: string;
     flavor: FlavorProfile;
   };
-  recommendations: SakeFlavorRecommendation[];
+  recommendations: SakeRecommendation[];
 }
 
 export function buildRecommendationReasonPrompt(

@@ -1,7 +1,6 @@
 import type {
   FlavorProfile,
-  SakeFlavorRecommendation,
-  SakeFlavorRecommendationWithReason,
+  SakeRecommendation,
 } from "@sake-app/shared";
 
 import {
@@ -60,8 +59,8 @@ export class RecommendationReasonService {
       sakeId: string;
       flavor: FlavorProfile;
     },
-    recommendations: SakeFlavorRecommendation[],
-  ): Promise<SakeFlavorRecommendationWithReason[]> {
+    recommendations: SakeRecommendation[],
+  ): Promise<SakeRecommendation[]> {
     const targetRecommendations = recommendations.slice(
       0,
       BEDROCK_RECOMMENDATION_LIMIT,

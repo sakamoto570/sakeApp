@@ -1,4 +1,3 @@
-import type { DrinkRating } from "./drink";
 import type { FlavorProfile } from "./sake";
 
 export interface SakeMasterItem {
@@ -29,7 +28,7 @@ export interface UserFavoriteItem extends UserActionBase {
 export interface UserDrinkItem extends UserActionBase {
   actionKey: `DRINK#${string}`;
   actionType: "DRINK";
-  rating?: DrinkRating;
+  rating?: number;
   memo?: string;
   drankAt: string;
 }

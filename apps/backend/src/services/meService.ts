@@ -1,5 +1,5 @@
 import type {
-  DrunkSakeSummary,
+  MySakeItem,
   UserDrinkItem,
 } from "@sake-app/shared";
 
@@ -8,7 +8,7 @@ import type { UserActionRepository } from "../repositories/userActionRepository"
 export class MeService {
   constructor(private readonly userActionRepository: UserActionRepository) {}
 
-  async listDrunkSakes(userId: string): Promise<DrunkSakeSummary[]> {
+  async listDrunkSakes(userId: string): Promise<MySakeItem[]> {
     const [drinks, favorites] = await Promise.all([
       this.userActionRepository.findDrinksByUserId(userId),
       this.userActionRepository.findFavoritesByUserId(userId),

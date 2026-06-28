@@ -1,11 +1,10 @@
-import type { FlavorProfile } from "./sake";
+export type {
+  CreateFavoriteRequest,
+  FavoriteItem,
+  FlavorProfile,
+} from "./types/api";
 
-export interface CreateFavoriteRequest {
-  sakeId: string;
-  sakeNameSnapshot: string;
-  breweryNameSnapshot?: string;
-  flavorSnapshot?: FlavorProfile;
-}
+import type { FlavorProfile } from "./types/api";
 
 export interface Favorite {
   sakeId: string;

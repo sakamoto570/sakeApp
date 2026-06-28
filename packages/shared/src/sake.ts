@@ -1,11 +1,15 @@
-export interface FlavorProfile {
-  fruity: number;
-  mellow: number;
-  rich: number;
-  calm: number;
-  dry: number;
-  light: number;
-}
+export type {
+  FlavorProfile,
+  SakeDetailResponse,
+  SakeRecommendation,
+  SakeSearchResult,
+} from "./types/api";
+
+import type {
+  FlavorProfile,
+  SakeDetailResponse,
+  SakeRecommendation,
+} from "./types/api";
 
 export type FlavorVector = FlavorProfile;
 
@@ -25,30 +29,8 @@ export interface FlavorCacheEntry {
 
 export type SakeSummary = Omit<Sake, "flavor">;
 
-export interface SakeRecommendation extends SakeSummary {
-  similarity: number;
-  reason: string;
-}
+export type SakeFlavorRecommendation = SakeRecommendation;
 
-export interface SakeFlavorRecommendation {
-  sakeId: string;
-  similarity: number;
-  flavor: FlavorProfile;
-}
+export type SakeFlavorRecommendationWithReason = SakeRecommendation;
 
-export interface SakeFlavorRecommendationWithReason
-  extends SakeFlavorRecommendation {
-  reason?: string;
-}
-
-export interface SakeSearchResult {
-  sakeId: string;
-  name: string;
-}
-
-export interface SakeDetail {
-  sakeId: string;
-  name: string;
-  breweryName?: string;
-  flavor?: FlavorProfile;
-}
+export type SakeDetail = SakeDetailResponse;
