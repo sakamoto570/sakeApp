@@ -11,7 +11,9 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.0.0",
     "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.1075.0",
     "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@fastify/aws-lambda": "^5.1.0",
     "@sake-app/shared": "*",
     "@sake-app/utils": "*",
@@ -23,4 +25,3 @@
     "vitest": "^3.2.0"
   }
 }
-

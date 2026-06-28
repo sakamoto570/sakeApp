@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
+import { createImageViewUrl } from "../api/imageApi";
 import { getMySakes, getRecommendations, getSakeDetail, searchSakes, } from "../api/sakeApi";
 const flavorAxes = [
     { key: "fruity", label: "華やか" },
@@ -15,6 +16,7 @@ const demoMySakes = [
         sakeId: "144",
         sakeName: "十四代",
         breweryName: "高木酒造",
+        imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
         flavor: {
             fruity: 0.88,
             mellow: 0.78,
@@ -31,6 +33,7 @@ const demoMySakes = [
         sakeId: "109",
         sakeName: "新政",
         breweryName: "新政酒造",
+        imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
         flavor: {
             fruity: 0.76,
             mellow: 0.54,
@@ -47,6 +50,7 @@ const demoMySakes = [
         sakeId: "887",
         sakeName: "蔵出し直汲み",
         breweryName: "○○酒造",
+        imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
         isFavorite: true,
         rating: 4,
         lastDrankAt: "2026-05-30",
@@ -106,6 +110,7 @@ const isSearching = ref(false);
 const isLoadingRecommendations = ref(false);
 const noticeMessage = ref(null);
 const searchNoticeMessage = ref(null);
+const imageViewUrls = ref({});
 const mySakeCards = computed(() => mySakes.value.map((sake) => ({
     sakeId: sake.sakeId,
     name: sake.sakeName,
@@ -113,6 +118,7 @@ const mySakeCards = computed(() => mySakes.value.map((sake) => ({
     flavor: sake.flavor,
     isFavorite: sake.isFavorite,
     rating: sake.rating,
+    imageUrl: sake.imageUrl,
     meta: sake.lastDrankAt,
     memo: "記録した時点の情報を表示しています。",
 })));
@@ -140,7 +146,28 @@ async function loadMySakes() {
     }
     finally {
         isLoadingMySakes.value = false;
+        void resolveImageViewUrls();
     }
+}
+async function resolveImageViewUrls() {
+    const nextImageViewUrls = {};
+    await Promise.all(mySakes.value.map(async (sake) => {
+        if (!sake.imageUrl) {
+            return;
+        }
+        if (sake.imageUrl.startsWith("http")) {
+            nextImageViewUrls[sake.imageUrl] = sake.imageUrl;
+            return;
+        }
+        try {
+            const response = await createImageViewUrl(sake.imageUrl);
+            nextImageViewUrls[sake.imageUrl] = response.viewUrl;
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }));
+    imageViewUrls.value = nextImageViewUrls;
 }
 async function submitSearch() {
     const q = searchQuery.value.trim();
@@ -244,6 +271,7 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['flavor-section']} */ ;
 /** @type {__VLS_StyleScopedClasses['card-summary']} */ ;
 /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
+/** @type {__VLS_StyleScopedClasses['card-image']} */ ;
 /** @type {__VLS_StyleScopedClasses['flavor-values']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "home" },
@@ -341,22 +369,36 @@ if (__VLS_ctx.mode === 'record') {
             });
             /** @type {__VLS_StyleScopedClasses['card-summary']} */ ;
             __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "bottle-thumb" },
-                'aria-hidden': "true",
+                ...{ class: "visual-stack" },
             });
-            /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
-                ...{ class: "bottle-neck" },
-            });
-            /** @type {__VLS_StyleScopedClasses['bottle-neck']} */ ;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
-                ...{ class: "bottle-body" },
-            });
-            /** @type {__VLS_StyleScopedClasses['bottle-body']} */ ;
-            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-                ...{ class: "bottle-label" },
-            });
-            /** @type {__VLS_StyleScopedClasses['bottle-label']} */ ;
+            /** @type {__VLS_StyleScopedClasses['visual-stack']} */ ;
+            if (sake.imageUrl && __VLS_ctx.imageViewUrls[sake.imageUrl]) {
+                __VLS_asFunctionalElement1(__VLS_intrinsics.img)({
+                    ...{ class: "card-image" },
+                    src: (__VLS_ctx.imageViewUrls[sake.imageUrl]),
+                    alt: (`${sake.name} のラベル写真`),
+                });
+                /** @type {__VLS_StyleScopedClasses['card-image']} */ ;
+            }
+            else {
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                    ...{ class: "bottle-thumb" },
+                    'aria-hidden': "true",
+                });
+                /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
+                    ...{ class: "bottle-neck" },
+                });
+                /** @type {__VLS_StyleScopedClasses['bottle-neck']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
+                    ...{ class: "bottle-body" },
+                });
+                /** @type {__VLS_StyleScopedClasses['bottle-body']} */ ;
+                __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                    ...{ class: "bottle-label" },
+                });
+                /** @type {__VLS_StyleScopedClasses['bottle-label']} */ ;
+            }
             if (sake.isFavorite) {
                 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
                     ...{ class: "favorite-pill" },
@@ -446,7 +488,7 @@ if (__VLS_ctx.mode === 'record') {
                     });
                     /** @type {__VLS_StyleScopedClasses['radar-axis']} */ ;
                     // @ts-ignore
-                    [mode, mode, loadMySakes, isLoadingMySakes, isLoadingMySakes, isLoadingMySakes, noticeMessage, noticeMessage, mySakeCards, mySakeCards, mySakeCards, radarPolygon, radarPolygon, flavorAxes, radarAxisEnd, radarAxisEnd,];
+                    [mode, mode, loadMySakes, isLoadingMySakes, isLoadingMySakes, isLoadingMySakes, noticeMessage, noticeMessage, mySakeCards, mySakeCards, mySakeCards, imageViewUrls, imageViewUrls, radarPolygon, radarPolygon, flavorAxes, radarAxisEnd, radarAxisEnd,];
                 }
                 __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
                     ...{ class: "radar-fill" },

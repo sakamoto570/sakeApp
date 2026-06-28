@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { createDrink } from "../api/drinkApi";
+import { createImageUploadUrl, uploadImageToS3 } from "../api/imageApi";
 import { getSakeDetail, searchSakes } from "../api/sakeApi";
 const flavorLabels = [
     { key: "fruity", label: "華やか" },
@@ -20,6 +21,8 @@ const manualBreweryName = ref("");
 const rating = ref("");
 const memo = ref("");
 const drankAt = ref(new Date().toISOString().slice(0, 10));
+const imageFile = ref(null);
+const imagePreviewUrl = ref(null);
 const isSearching = ref(false);
 const isLoadingDetail = ref(false);
 const isSaving = ref(false);
@@ -99,6 +102,36 @@ function startManualEntry(seedName = searchQuery.value) {
     detailError.value = null;
     saveError.value = null;
 }
+function handleImageChange(event) {
+    const input = event.target;
+    const file = input.files?.[0] ?? null;
+    if (imagePreviewUrl.value) {
+        URL.revokeObjectURL(imagePreviewUrl.value);
+    }
+    imageFile.value = file;
+    imagePreviewUrl.value = file ? URL.createObjectURL(file) : null;
+}
+function clearImage() {
+    if (imagePreviewUrl.value) {
+        URL.revokeObjectURL(imagePreviewUrl.value);
+    }
+    imageFile.value = null;
+    imagePreviewUrl.value = null;
+}
+async function uploadSelectedImage() {
+    if (!imageFile.value) {
+        return undefined;
+    }
+    const upload = await createImageUploadUrl({
+        fileName: imageFile.value.name,
+        contentType: imageFile.value.type,
+    });
+    await uploadImageToS3({
+        uploadUrl: upload.uploadUrl,
+        file: imageFile.value,
+    });
+    return upload.imageUrl;
+}
 async function submitDrink() {
     saveError.value = null;
     const record = selectedRecord.value;
@@ -116,11 +149,13 @@ async function submitDrink() {
     }
     isSaving.value = true;
     try {
+        const imageUrl = await uploadSelectedImage();
         await createDrink({
             sakeId: record.sakeId,
             sakeNameSnapshot: record.name,
             breweryNameSnapshot: record.breweryName,
             flavorSnapshot: record.flavor,
+            imageUrl,
             rating: rating.value === "" ? undefined : rating.value,
             memo: memo.value.trim() || undefined,
             drankAt: drankAt.value,
@@ -129,7 +164,7 @@ async function submitDrink() {
     }
     catch (error) {
         console.error(error);
-        saveError.value = "飲酒記録の保存に失敗しました。";
+        saveError.value = "飲酒記録の保存に失敗しました。画像サイズや形式も確認してください。";
     }
     finally {
         isSaving.value = false;
@@ -179,9 +214,10 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['manual-entry-button']} */ ;
 /** @type {__VLS_StyleScopedClasses['secondary-button']} */ ;
 /** @type {__VLS_StyleScopedClasses['back-link']} */ ;
+/** @type {__VLS_StyleScopedClasses['clear-image-button']} */ ;
 /** @type {__VLS_StyleScopedClasses['result-button']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-button']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-button']} */ ;
+/** @type {__VLS_StyleScopedClasses['image-preview']} */ ;
+/** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
 /** @type {__VLS_StyleScopedClasses['rating-preview']} */ ;
 /** @type {__VLS_StyleScopedClasses['flavor-item']} */ ;
 /** @type {__VLS_StyleScopedClasses['flavor-item']} */ ;
@@ -195,6 +231,7 @@ let __VLS_directives;
 /** @type {__VLS_StyleScopedClasses['record-summary']} */ ;
 /** @type {__VLS_StyleScopedClasses['flavor-section']} */ ;
 /** @type {__VLS_StyleScopedClasses['missing-flavor-section']} */ ;
+/** @type {__VLS_StyleScopedClasses['image-preview']} */ ;
 /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
 /** @type {__VLS_StyleScopedClasses['flavor-grid']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
@@ -362,31 +399,41 @@ if (__VLS_ctx.detailError) {
 if (__VLS_ctx.selectedRecord) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "selected-card" },
-        ...{ class: ({ 'without-flavor': !__VLS_ctx.selectedRecord.flavor }) },
     });
     /** @type {__VLS_StyleScopedClasses['selected-card']} */ ;
-    /** @type {__VLS_StyleScopedClasses['without-flavor']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "record-summary" },
     });
     /** @type {__VLS_StyleScopedClasses['record-summary']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "bottle-thumb" },
-        'aria-hidden': "true",
+        ...{ class: "image-preview" },
     });
-    /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
-        ...{ class: "bottle-neck" },
-    });
-    /** @type {__VLS_StyleScopedClasses['bottle-neck']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
-        ...{ class: "bottle-body" },
-    });
-    /** @type {__VLS_StyleScopedClasses['bottle-body']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-        ...{ class: "bottle-label" },
-    });
-    /** @type {__VLS_StyleScopedClasses['bottle-label']} */ ;
+    /** @type {__VLS_StyleScopedClasses['image-preview']} */ ;
+    if (__VLS_ctx.imagePreviewUrl) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.img)({
+            src: (__VLS_ctx.imagePreviewUrl),
+            alt: "選択したラベル写真",
+        });
+    }
+    else {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "bottle-thumb" },
+            'aria-hidden': "true",
+        });
+        /** @type {__VLS_StyleScopedClasses['bottle-thumb']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
+            ...{ class: "bottle-neck" },
+        });
+        /** @type {__VLS_StyleScopedClasses['bottle-neck']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span)({
+            ...{ class: "bottle-body" },
+        });
+        /** @type {__VLS_StyleScopedClasses['bottle-body']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "bottle-label" },
+        });
+        /** @type {__VLS_StyleScopedClasses['bottle-label']} */ ;
+    }
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "record-main" },
     });
@@ -476,7 +523,7 @@ if (__VLS_ctx.selectedRecord) {
             });
             /** @type {__VLS_StyleScopedClasses['radar-axis']} */ ;
             // @ts-ignore
-            [isLoadingDetail, selectionMode, selectionMode, manualName, manualBreweryName, detailError, detailError, selectedRecord, selectedRecord, selectedRecord, selectedRecord, selectedRecord, selectedRecord, drankAt, rating, rating, memo, radarPolygon, radarPolygon, flavorLabels, radarAxisEnd, radarAxisEnd,];
+            [isLoadingDetail, selectionMode, selectionMode, manualName, manualBreweryName, detailError, detailError, selectedRecord, selectedRecord, selectedRecord, selectedRecord, selectedRecord, imagePreviewUrl, imagePreviewUrl, drankAt, rating, rating, memo, radarPolygon, radarPolygon, flavorLabels, radarAxisEnd, radarAxisEnd,];
         }
         __VLS_asFunctionalElement1(__VLS_intrinsics.polygon)({
             ...{ class: "radar-fill" },
@@ -576,6 +623,24 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
 });
 /** @type {__VLS_StyleScopedClasses['field']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+__VLS_asFunctionalElement1(__VLS_intrinsics.input)({
+    ...{ onChange: (__VLS_ctx.handleImageChange) },
+    type: "file",
+    accept: "image/jpeg,image/png,image/webp",
+});
+if (__VLS_ctx.imageFile) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+        ...{ onClick: (__VLS_ctx.clearImage) },
+        ...{ class: "clear-image-button" },
+        type: "button",
+    });
+    /** @type {__VLS_StyleScopedClasses['clear-image-button']} */ ;
+}
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "field" },
+});
+/** @type {__VLS_StyleScopedClasses['field']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
 __VLS_asFunctionalElement1(__VLS_intrinsics.select, __VLS_intrinsics.select)({
     value: (__VLS_ctx.rating),
 });
@@ -643,7 +708,7 @@ const __VLS_8 = __VLS_7({
 /** @type {__VLS_StyleScopedClasses['secondary-button']} */ ;
 const { default: __VLS_11 } = __VLS_9.slots;
 // @ts-ignore
-[isLoadingDetail, drankAt, rating, memo, submitDrink, saveError, saveError,];
+[isLoadingDetail, drankAt, rating, memo, submitDrink, handleImageChange, imageFile, clearImage, saveError, saveError,];
 var __VLS_9;
 __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ class: "primary-button" },

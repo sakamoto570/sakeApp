@@ -9,6 +9,7 @@ import type {
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
+import { createImageViewUrl } from "../api/imageApi";
 import {
   getMySakes,
   getRecommendations,
@@ -26,6 +27,7 @@ type DisplaySake = {
   flavor?: FlavorProfile;
   isFavorite?: boolean;
   rating?: number;
+  imageUrl?: string;
   meta?: string;
   memo?: string;
 };
@@ -50,6 +52,7 @@ const demoMySakes: DemoMySakeItem[] = [
     sakeId: "144",
     sakeName: "十四代",
     breweryName: "高木酒造",
+    imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
     flavor: {
       fruity: 0.88,
       mellow: 0.78,
@@ -66,6 +69,7 @@ const demoMySakes: DemoMySakeItem[] = [
     sakeId: "109",
     sakeName: "新政",
     breweryName: "新政酒造",
+    imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
     flavor: {
       fruity: 0.76,
       mellow: 0.54,
@@ -82,6 +86,7 @@ const demoMySakes: DemoMySakeItem[] = [
     sakeId: "887",
     sakeName: "蔵出し直汲み",
     breweryName: "○○酒造",
+    imageUrl: "https://images.unsplash.com/photo-1612878010854-1250dfc5000a?auto=format&fit=crop&w=240&q=80",
     isFavorite: true,
     rating: 4,
     lastDrankAt: "2026-05-30",
@@ -144,6 +149,7 @@ const isSearching = ref(false);
 const isLoadingRecommendations = ref(false);
 const noticeMessage = ref<string | null>(null);
 const searchNoticeMessage = ref<string | null>(null);
+const imageViewUrls = ref<Record<string, string>>({});
 
 const mySakeCards = computed<DisplaySake[]>(() =>
   mySakes.value.map((sake) => ({
@@ -153,6 +159,7 @@ const mySakeCards = computed<DisplaySake[]>(() =>
     flavor: sake.flavor,
     isFavorite: sake.isFavorite,
     rating: (sake as MySakeItem & { rating?: number }).rating,
+    imageUrl: sake.imageUrl,
     meta: sake.lastDrankAt,
     memo: "記録した時点の情報を表示しています。",
   })),
@@ -185,7 +192,34 @@ async function loadMySakes() {
       "APIから取得できないため、カード確認用のサンプルを表示しています。";
   } finally {
     isLoadingMySakes.value = false;
+    void resolveImageViewUrls();
   }
+}
+
+async function resolveImageViewUrls() {
+  const nextImageViewUrls: Record<string, string> = {};
+
+  await Promise.all(
+    mySakes.value.map(async (sake) => {
+      if (!sake.imageUrl) {
+        return;
+      }
+
+      if (sake.imageUrl.startsWith("http")) {
+        nextImageViewUrls[sake.imageUrl] = sake.imageUrl;
+        return;
+      }
+
+      try {
+        const response = await createImageViewUrl(sake.imageUrl);
+        nextImageViewUrls[sake.imageUrl] = response.viewUrl;
+      } catch (error) {
+        console.error(error);
+      }
+    }),
+  );
+
+  imageViewUrls.value = nextImageViewUrls;
 }
 
 async function submitSearch() {
@@ -322,7 +356,13 @@ onMounted(() => {
         >
           <span class="card-summary">
             <span class="visual-stack">
-              <span class="bottle-thumb" aria-hidden="true">
+              <img
+                v-if="sake.imageUrl && imageViewUrls[sake.imageUrl]"
+                class="card-image"
+                :src="imageViewUrls[sake.imageUrl]"
+                :alt="`${sake.name} のラベル写真`"
+              />
+              <span v-else class="bottle-thumb" aria-hidden="true">
                 <span class="bottle-neck" />
                 <span class="bottle-body" />
                 <span class="bottle-label">酒</span>
@@ -655,6 +695,15 @@ h2 {
   display: grid;
   gap: 7px;
   justify-items: center;
+}
+
+.card-image {
+  border: 1px solid #dbe4d8;
+  border-radius: 14px;
+  display: block;
+  height: 88px;
+  object-fit: cover;
+  width: 74px;
 }
 
 .bottle-thumb {
@@ -1013,6 +1062,11 @@ h2 {
 
   .bottle-thumb {
     height: 120px;
+  }
+
+  .card-image {
+    height: 120px;
+    width: 100%;
   }
 
   .flavor-values {

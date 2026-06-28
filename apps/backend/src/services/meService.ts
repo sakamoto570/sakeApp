@@ -36,6 +36,7 @@ export class MeService {
         sakeName: drink.sakeNameSnapshot,
         breweryName: drink.breweryNameSnapshot,
         flavor: drink.flavorSnapshot,
+        imageUrl: drink.imageUrl,
         lastDrankAt: drink.drankAt,
         isFavorite: favoriteSakeIds.has(drink.sakeId),
       }));

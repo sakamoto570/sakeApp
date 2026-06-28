@@ -77,6 +77,10 @@ function parseCreateDrinkRequest(
     return { message: "memo must be a string" };
   }
 
+  if (body.imageUrl !== undefined && typeof body.imageUrl !== "string") {
+    return { message: "imageUrl must be a string" };
+  }
+
   if (
     body.flavorSnapshot !== undefined &&
     !isFlavorProfile(body.flavorSnapshot)
@@ -90,6 +94,7 @@ function parseCreateDrinkRequest(
       sakeNameSnapshot: body.sakeNameSnapshot,
       breweryNameSnapshot: body.breweryNameSnapshot,
       flavorSnapshot: body.flavorSnapshot,
+      imageUrl: body.imageUrl,
       rating: body.rating,
       memo: body.memo,
       drankAt: body.drankAt,

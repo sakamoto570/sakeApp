@@ -22,6 +22,7 @@ export class DrinkService {
       sakeNameSnapshot: request.sakeNameSnapshot,
       breweryNameSnapshot: request.breweryNameSnapshot,
       flavorSnapshot: request.flavorSnapshot,
+      imageUrl: request.imageUrl,
       rating: request.rating,
       memo: request.memo,
       drankAt: request.drankAt,

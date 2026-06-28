@@ -1,6 +1,10 @@
 export type {
   CreateDrinkRequest,
   CreateFavoriteRequest,
+  CreateImageUploadUrlRequest,
+  CreateImageUploadUrlResponse,
+  CreateImageViewUrlRequest,
+  CreateImageViewUrlResponse,
   ErrorResponse,
   FavoriteItem,
   FlavorProfile,

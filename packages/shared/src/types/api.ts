@@ -31,6 +31,7 @@ export type CreateDrinkRequest = {
   sakeNameSnapshot: string;
   breweryNameSnapshot?: string;
   flavorSnapshot?: FlavorProfile;
+  imageUrl?: string;
   rating?: number;
   memo?: string;
   drankAt: string;
@@ -41,8 +42,27 @@ export type MySakeItem = {
   sakeName: string;
   breweryName?: string;
   flavor?: FlavorProfile;
+  imageUrl?: string;
   isFavorite: boolean;
   lastDrankAt: string;
+};
+
+export type CreateImageUploadUrlRequest = {
+  fileName: string;
+  contentType: string;
+};
+
+export type CreateImageUploadUrlResponse = {
+  uploadUrl: string;
+  imageUrl: string;
+};
+
+export type CreateImageViewUrlRequest = {
+  imageUrl: string;
+};
+
+export type CreateImageViewUrlResponse = {
+  viewUrl: string;
 };
 
 export type CreateFavoriteRequest = {

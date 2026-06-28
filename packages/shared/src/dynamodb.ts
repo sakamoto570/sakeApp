@@ -16,6 +16,7 @@ interface UserActionBase {
   sakeNameSnapshot: string;
   breweryNameSnapshot?: string;
   flavorSnapshot?: FlavorProfile;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

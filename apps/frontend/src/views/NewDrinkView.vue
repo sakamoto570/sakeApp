@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import type {
-  FlavorProfile,
-  SakeDetailResponse,
-  SakeSearchResult,
-} from "@sake-app/shared";
+import type { FlavorProfile, SakeDetailResponse, SakeSearchResult } from "@sake-app/shared";
 import { computed, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
 import { createDrink } from "../api/drinkApi";
+import { createImageUploadUrl, uploadImageToS3 } from "../api/imageApi";
 import { getSakeDetail, searchSakes } from "../api/sakeApi";
 
 type FlavorKey = keyof FlavorProfile;
@@ -33,6 +30,8 @@ const manualBreweryName = ref("");
 const rating = ref<number | "">("");
 const memo = ref("");
 const drankAt = ref(new Date().toISOString().slice(0, 10));
+const imageFile = ref<File | null>(null);
+const imagePreviewUrl = ref<string | null>(null);
 
 const isSearching = ref(false);
 const isLoadingDetail = ref(false);
@@ -68,7 +67,6 @@ const canSave = computed(() => {
 
 async function submitSearch() {
   const q = searchQuery.value.trim();
-
   selectionMode.value = "sakenowa";
   searchError.value = null;
   detailError.value = null;
@@ -126,6 +124,45 @@ function startManualEntry(seedName = searchQuery.value) {
   saveError.value = null;
 }
 
+function handleImageChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0] ?? null;
+
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value);
+  }
+
+  imageFile.value = file;
+  imagePreviewUrl.value = file ? URL.createObjectURL(file) : null;
+}
+
+function clearImage() {
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value);
+  }
+
+  imageFile.value = null;
+  imagePreviewUrl.value = null;
+}
+
+async function uploadSelectedImage(): Promise<string | undefined> {
+  if (!imageFile.value) {
+    return undefined;
+  }
+
+  const upload = await createImageUploadUrl({
+    fileName: imageFile.value.name,
+    contentType: imageFile.value.type,
+  });
+
+  await uploadImageToS3({
+    uploadUrl: upload.uploadUrl,
+    file: imageFile.value,
+  });
+
+  return upload.imageUrl;
+}
+
 async function submitDrink() {
   saveError.value = null;
   const record = selectedRecord.value;
@@ -148,11 +185,14 @@ async function submitDrink() {
   isSaving.value = true;
 
   try {
+    const imageUrl = await uploadSelectedImage();
+
     await createDrink({
       sakeId: record.sakeId,
       sakeNameSnapshot: record.name,
       breweryNameSnapshot: record.breweryName,
       flavorSnapshot: record.flavor,
+      imageUrl,
       rating: rating.value === "" ? undefined : rating.value,
       memo: memo.value.trim() || undefined,
       drankAt: drankAt.value,
@@ -161,7 +201,7 @@ async function submitDrink() {
     await router.push("/");
   } catch (error) {
     console.error(error);
-    saveError.value = "飲酒記録の保存に失敗しました。";
+    saveError.value = "飲酒記録の保存に失敗しました。画像サイズや形式も確認してください。";
   } finally {
     isSaving.value = false;
   }
@@ -211,7 +251,7 @@ function radarAxisEnd(index: number): string {
     <div class="page-heading">
       <div>
         <h1>新規飲酒記録</h1>
-        <p>さけのわに無い銘柄も、手入力でそのまま記録できます。</p>
+        <p>さけのわに無い銘柄も、写真付きでそのまま記録できます。</p>
       </div>
       <RouterLink class="back-link" to="/">戻る</RouterLink>
     </div>
@@ -220,21 +260,12 @@ function radarAxisEnd(index: number): string {
       <form class="search-form" @submit.prevent="submitSearch">
         <label class="field search-field">
           <span>銘柄検索キーワード</span>
-          <input
-            v-model="searchQuery"
-            type="search"
-            placeholder="例: 獺祭"
-            autocomplete="off"
-          />
+          <input v-model="searchQuery" type="search" placeholder="例: 獺祭" autocomplete="off" />
         </label>
         <button type="submit" :disabled="isSearching">
           {{ isSearching ? "検索中..." : "検索" }}
         </button>
-        <button
-          type="button"
-          class="manual-entry-button"
-          @click="startManualEntry()"
-        >
+        <button type="button" class="manual-entry-button" @click="startManualEntry()">
           手入力で記録
         </button>
       </form>
@@ -266,21 +297,12 @@ function radarAxisEnd(index: number): string {
       <div class="manual-fields">
         <label class="field">
           <span>銘柄名</span>
-          <input
-            v-model="manualName"
-            type="text"
-            placeholder="例: 蔵出し直汲み 純米生原酒"
-            required
-          />
+          <input v-model="manualName" type="text" placeholder="例: 蔵出し直汲み 純米生原酒" required />
         </label>
 
         <label class="field">
           <span>酒蔵名 任意</span>
-          <input
-            v-model="manualBreweryName"
-            type="text"
-            placeholder="例: ○○酒造"
-          />
+          <input v-model="manualBreweryName" type="text" placeholder="例: ○○酒造" />
         </label>
       </div>
     </section>
@@ -293,41 +315,32 @@ function radarAxisEnd(index: number): string {
 
       <p v-if="detailError" class="error-message">{{ detailError }}</p>
 
-      <div
-        v-if="selectedRecord"
-        class="selected-card"
-        :class="{ 'without-flavor': !selectedRecord.flavor }"
-      >
+      <div v-if="selectedRecord" class="selected-card">
         <div class="record-summary">
-          <div class="bottle-thumb" aria-hidden="true">
-            <span class="bottle-neck" />
-            <span class="bottle-body" />
-            <span class="bottle-label">酒</span>
+          <div class="image-preview">
+            <img v-if="imagePreviewUrl" :src="imagePreviewUrl" alt="選択したラベル写真" />
+            <div v-else class="bottle-thumb" aria-hidden="true">
+              <span class="bottle-neck" />
+              <span class="bottle-body" />
+              <span class="bottle-label">酒</span>
+            </div>
           </div>
 
           <div class="record-main">
             <div>
               <h3>{{ selectedRecord.name }}</h3>
-              <p v-if="selectedRecord.breweryName" class="sub-text">
-                {{ selectedRecord.breweryName }}
-              </p>
+              <p v-if="selectedRecord.breweryName" class="sub-text">{{ selectedRecord.breweryName }}</p>
               <p v-else class="sub-text">酒蔵名は未入力です。</p>
             </div>
 
             <div class="record-meta">
               <span>{{ drankAt || "飲酒日未入力" }}</span>
-              <span v-if="rating" class="rating-preview">
-                ★ {{ rating }}
-              </span>
+              <span v-if="rating" class="rating-preview">★ {{ rating }}</span>
               <span v-else class="rating-preview muted">未評価</span>
-              <span v-if="selectionMode === 'manual'" class="manual-badge">
-                手入力
-              </span>
+              <span v-if="selectionMode === 'manual'" class="manual-badge">手入力</span>
             </div>
 
-            <p class="memo-preview">
-              {{ memo.trim() || "メモはまだ入力されていません。" }}
-            </p>
+            <p class="memo-preview">{{ memo.trim() || "メモはまだ入力されていません。" }}</p>
           </div>
         </div>
 
@@ -345,10 +358,7 @@ function radarAxisEnd(index: number): string {
                 :x2="radarAxisEnd(index).split(',')[0]"
                 :y2="radarAxisEnd(index).split(',')[1]"
               />
-              <polygon
-                class="radar-fill"
-                :points="radarPolygon(selectedRecord.flavor)"
-              />
+              <polygon class="radar-fill" :points="radarPolygon(selectedRecord.flavor)" />
               <text class="radar-label radar-label-top" x="75" y="14">華やか</text>
               <text class="radar-label radar-label-upper-right" x="134" y="48">芳醇</text>
               <text class="radar-label radar-label-lower-right" x="134" y="105">重厚</text>
@@ -359,15 +369,9 @@ function radarAxisEnd(index: number): string {
           </div>
 
           <div class="flavor-grid">
-            <span
-              v-for="flavor in flavorLabels"
-              :key="flavor.key"
-              class="flavor-item"
-            >
+            <span v-for="flavor in flavorLabels" :key="flavor.key" class="flavor-item">
               <span>{{ flavor.label }}</span>
-              <strong>
-                {{ formatFlavorValue(selectedRecord.flavor, flavor.key) }}
-              </strong>
+              <strong>{{ formatFlavorValue(selectedRecord.flavor, flavor.key) }}</strong>
             </span>
           </div>
         </div>
@@ -376,9 +380,7 @@ function radarAxisEnd(index: number): string {
           <div class="missing-icon" aria-hidden="true">!</div>
           <div>
             <h4>風味データ未取得</h4>
-            <p>
-              さけのわに無い、またはレーダーチャートが無い銘柄として保存します。評価・メモ・日付は通常通り記録できます。
-            </p>
+            <p>評価・メモ・日付・写真は通常通り記録できます。</p>
           </div>
         </div>
       </div>
@@ -390,6 +392,14 @@ function radarAxisEnd(index: number): string {
 
     <form class="panel form-panel" @submit.prevent="submitDrink">
       <h2>記録内容</h2>
+
+      <label class="field">
+        <span>ラベル写真 任意</span>
+        <input type="file" accept="image/jpeg,image/png,image/webp" @change="handleImageChange" />
+      </label>
+      <button v-if="imageFile" class="clear-image-button" type="button" @click="clearImage">
+        画像を外す
+      </button>
 
       <label class="field">
         <span>評価</span>
@@ -405,11 +415,7 @@ function radarAxisEnd(index: number): string {
 
       <label class="field">
         <span>メモ</span>
-        <textarea
-          v-model="memo"
-          rows="4"
-          placeholder="味の印象、飲んだ場所、合わせた料理など"
-        />
+        <textarea v-model="memo" rows="4" placeholder="味の印象、飲んだ場所、合わせた料理など" />
       </label>
 
       <label class="field">
@@ -421,11 +427,7 @@ function radarAxisEnd(index: number): string {
 
       <div class="actions">
         <RouterLink class="secondary-button" to="/">戻る</RouterLink>
-        <button
-          class="primary-button"
-          type="submit"
-          :disabled="isSaving || !canSave"
-        >
+        <button class="primary-button" type="submit" :disabled="isSaving || !canSave">
           {{ isSaving ? "保存中..." : "保存する" }}
         </button>
       </div>
@@ -519,6 +521,10 @@ textarea {
   padding: 0 14px;
 }
 
+input[type="file"] {
+  padding: 10px 12px;
+}
+
 textarea {
   min-height: 108px;
   padding: 12px 14px;
@@ -529,7 +535,8 @@ textarea {
 .primary-button,
 .secondary-button,
 .back-link,
-.manual-entry-button {
+.manual-entry-button,
+.clear-image-button {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
@@ -551,7 +558,8 @@ textarea {
 
 .manual-entry-button,
 .secondary-button,
-.back-link {
+.back-link,
+.clear-image-button {
   background: #fff;
   border: 1px solid #aebbac;
   color: #173f2b;
@@ -592,15 +600,6 @@ button:disabled {
   border-color: #89c45f;
 }
 
-.result-button span {
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.result-button small {
-  color: #657064;
-}
-
 .selected-card {
   background:
     linear-gradient(#fff, #fff) padding-box,
@@ -621,14 +620,26 @@ button:disabled {
   grid-template-columns: 112px minmax(0, 1fr);
 }
 
+.image-preview,
+.bottle-thumb {
+  border-radius: 14px;
+  min-height: 150px;
+  overflow: hidden;
+}
+
+.image-preview img {
+  display: block;
+  height: 150px;
+  object-fit: cover;
+  width: 112px;
+}
+
 .bottle-thumb {
   align-items: center;
   background: linear-gradient(180deg, #f3f6f1, #e8eee5);
   border: 1px solid #dbe4d8;
-  border-radius: 14px;
   display: grid;
   justify-items: center;
-  min-height: 150px;
   padding: 14px;
   position: relative;
 }
@@ -854,6 +865,11 @@ button:disabled {
   .flavor-section,
   .missing-flavor-section {
     grid-template-columns: 1fr;
+  }
+
+  .image-preview img {
+    height: 180px;
+    width: 100%;
   }
 
   .bottle-thumb {
