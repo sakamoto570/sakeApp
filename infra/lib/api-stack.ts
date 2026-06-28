@@ -58,6 +58,7 @@ export class ApiStack extends Stack {
       timeout: Duration.seconds(30),
       tracing: Tracing.ACTIVE,
       environment: {
+        SAKE_MASTER_TABLE_NAME: props.sakeMasterTable.tableName,
         USER_ACTIONS_TABLE_NAME: props.userActionsTable.tableName,
       },
       bundling: {
@@ -68,6 +69,7 @@ export class ApiStack extends Stack {
     });
 
     props.userActionsTable.grantReadWriteData(backendFunction);
+    props.sakeMasterTable.grantReadData(backendFunction);
 
     this.httpApi = new HttpApi(this, "HttpApi", {
       apiName: `${props.stage}-sake-api`,
@@ -108,6 +110,16 @@ export class ApiStack extends Stack {
       methods: [HttpMethod.GET],
       integration: new HttpLambdaIntegration(
         "SearchSakesIntegration",
+        backendFunction,
+      ),
+      authorizer: this.cognitoJwtAuthorizer,
+    });
+
+    this.httpApi.addRoutes({
+      path: "/sakes/{sakeId}/detail",
+      methods: [HttpMethod.GET],
+      integration: new HttpLambdaIntegration(
+        "GetSakeDetailIntegration",
         backendFunction,
       ),
       authorizer: this.cognitoJwtAuthorizer,

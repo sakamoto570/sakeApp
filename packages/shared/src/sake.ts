@@ -34,3 +34,10 @@ export interface SakeSearchResult {
   sakeId: string;
   name: string;
 }
+
+export interface SakeDetail {
+  sakeId: string;
+  name: string;
+  breweryName?: string;
+  flavor?: FlavorProfile;
+}

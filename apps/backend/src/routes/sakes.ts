@@ -5,6 +5,11 @@ import {
 } from "@sake-app/shared";
 
 import { SakenowaClientError } from "../clients/sakenowaClient";
+import { getSakeRepository } from "../repositories/sakeRepository";
+import {
+  SakeDetailService,
+  SakeNotFoundError,
+} from "../services/sakeDetailService";
 import { SakeSearchService } from "../services/sakeSearchService";
 
 interface LambdaDecoratedRequest extends FastifyRequest {
@@ -15,6 +20,10 @@ interface LambdaDecoratedRequest extends FastifyRequest {
 
 interface SearchQuery {
   q?: string;
+}
+
+interface SakeDetailParams {
+  sakeId?: string;
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -61,6 +70,62 @@ export const sakeRoutes: FastifyPluginAsync = async (app) => {
           error: {
             code: "SAKENOWA_BAD_GATEWAY",
             message: "Failed to fetch Sakenowa brands",
+          },
+        });
+      }
+
+      throw error;
+    }
+  });
+
+  app.get<{
+    Params: SakeDetailParams;
+  }>("/:sakeId/detail", async (request, reply) => {
+    const event = (request as LambdaDecoratedRequest).awsLambda?.event;
+    const userId = event ? getAuthenticatedUserId(event) : undefined;
+
+    if (!userId) {
+      return reply.status(401).send({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication is required",
+        },
+      });
+    }
+
+    const { sakeId } = request.params;
+
+    if (!isNonEmptyString(sakeId)) {
+      return reply.status(400).send({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "sakeId is required",
+        },
+      });
+    }
+
+    try {
+      const detailService = new SakeDetailService(getSakeRepository());
+      const detail = await detailService.getDetail(sakeId);
+
+      return reply.send(detail);
+    } catch (error) {
+      if (error instanceof SakeNotFoundError) {
+        return reply.status(404).send({
+          error: {
+            code: "SAKE_NOT_FOUND",
+            message: "Sake was not found",
+          },
+        });
+      }
+
+      if (error instanceof SakenowaClientError) {
+        request.log.error(error);
+
+        return reply.status(502).send({
+          error: {
+            code: "SAKENOWA_BAD_GATEWAY",
+            message: "Failed to fetch Sakenowa data",
           },
         });
       }
