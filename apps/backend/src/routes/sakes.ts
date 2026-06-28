@@ -10,6 +10,11 @@ import {
   SakeDetailService,
   SakeNotFoundError,
 } from "../services/sakeDetailService";
+import {
+  RecommendationService,
+  RecommendationTargetFlavorMissingError,
+  RecommendationTargetNotFoundError,
+} from "../services/recommendationService";
 import { SakeSearchService } from "../services/sakeSearchService";
 
 interface LambdaDecoratedRequest extends FastifyRequest {
@@ -22,7 +27,7 @@ interface SearchQuery {
   q?: string;
 }
 
-interface SakeDetailParams {
+interface SakeIdParams {
   sakeId?: string;
 }
 
@@ -79,7 +84,7 @@ export const sakeRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get<{
-    Params: SakeDetailParams;
+    Params: SakeIdParams;
   }>("/:sakeId/detail", async (request, reply) => {
     const event = (request as LambdaDecoratedRequest).awsLambda?.event;
     const userId = event ? getAuthenticatedUserId(event) : undefined;
@@ -134,7 +139,71 @@ export const sakeRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.get("/:sakeId/recommendations", async () => {
-    throw new Error("Not implemented");
+  app.get<{
+    Params: SakeIdParams;
+  }>("/:sakeId/recommendations", async (request, reply) => {
+    const event = (request as LambdaDecoratedRequest).awsLambda?.event;
+    const userId = event ? getAuthenticatedUserId(event) : undefined;
+
+    if (!userId) {
+      return reply.status(401).send({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication is required",
+        },
+      });
+    }
+
+    const { sakeId } = request.params;
+
+    if (!isNonEmptyString(sakeId)) {
+      return reply.status(400).send({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "sakeId is required",
+        },
+      });
+    }
+
+    try {
+      const recommendationService = new RecommendationService(
+        getSakeRepository(),
+      );
+      const result = await recommendationService.listRecommendations(
+        sakeId,
+      );
+
+      request.log.info(
+        {
+          sakeId,
+          fetchedCount: result.stats.fetchedCount,
+          excludedCount: result.stats.excludedCount,
+          recommendationCount: result.stats.recommendationCount,
+        },
+        "Calculated sake recommendations",
+      );
+
+      return reply.send(result.recommendations);
+    } catch (error) {
+      if (error instanceof RecommendationTargetNotFoundError) {
+        return reply.status(404).send({
+          error: {
+            code: "SAKE_NOT_FOUND",
+            message: "Sake was not found",
+          },
+        });
+      }
+
+      if (error instanceof RecommendationTargetFlavorMissingError) {
+        return reply.status(422).send({
+          error: {
+            code: "SAKE_FLAVOR_MISSING",
+            message: "Sake flavor is missing",
+          },
+        });
+      }
+
+      throw error;
+    }
   });
 };

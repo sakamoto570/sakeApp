@@ -2,11 +2,13 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   GetCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { SakeMasterItem } from "@sake-app/shared";
 
 export interface SakeRepository {
   getSakeMasterItem(sakeId: string): Promise<SakeMasterItem | undefined>;
+  listSakeMasterItems(): Promise<SakeMasterItem[]>;
 }
 
 export class DynamoDbSakeRepository implements SakeRepository {
@@ -28,6 +30,25 @@ export class DynamoDbSakeRepository implements SakeRepository {
     );
 
     return result.Item as SakeMasterItem | undefined;
+  }
+
+  async listSakeMasterItems(): Promise<SakeMasterItem[]> {
+    const items: SakeMasterItem[] = [];
+    let exclusiveStartKey: Record<string, unknown> | undefined;
+
+    do {
+      const result = await this.client.send(
+        new ScanCommand({
+          TableName: this.tableName,
+          ExclusiveStartKey: exclusiveStartKey,
+        }),
+      );
+
+      items.push(...((result.Items ?? []) as SakeMasterItem[]));
+      exclusiveStartKey = result.LastEvaluatedKey;
+    } while (exclusiveStartKey);
+
+    return items;
   }
 }
 
